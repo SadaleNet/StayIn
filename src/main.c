@@ -12,6 +12,7 @@
 #define GAME_SCENE_FALL_RATE 1
 #define GAME_SCENE_FALL_INTERVAL 100
 #define CHARACTER_JUMP_VELOCITY -32
+#define CHARACTER_MOVEMENT_SPEED_16 16
 #define CLOUD_SPAWN_MIN_INTERVAL 5000
 #define CLOUD_SPAWN_MAX_INTERVAL 10000
 
@@ -49,9 +50,9 @@ void handleKeyInput(void){
 	uint8_t state = keysGetPressedState();
 	if(!gameOver){
 		if((state&KEYS_LEFT)!=0)
-			characterX16 -= 16;
+			characterX16 -= CHARACTER_MOVEMENT_SPEED_16;
 		if((state&KEYS_RIGHT)!=0)
-			characterX16 += 16;
+			characterX16 += CHARACTER_MOVEMENT_SPEED_16;
 		if((state&KEYS_UP)!=0 && (justChanged&KEYS_UP)!=0){
 			if(characterLanded){
 				characterYVel16 = CHARACTER_JUMP_VELOCITY;

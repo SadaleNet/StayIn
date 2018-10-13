@@ -125,7 +125,8 @@ void processGameLogic(void){
 		}
 	}
 
-	if(character->y+CHARACTER_HEIGHT<0 || character->y>=GRAPHIC_HEIGHT*8)
+	if(character->x+CHARACTER_WIDTH<0 || character->x>GRAPHIC_WIDTH ||
+		character->y+CHARACTER_HEIGHT<0 || character->y>=GRAPHIC_HEIGHT*8)
 		gameOver = true;
 }
 

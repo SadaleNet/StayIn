@@ -35,6 +35,8 @@
 #define MINE_MAX_SPEED 5
 #define CONVEYOR_MIN_SPEED 10
 #define CONVEYOR_MAX_SPEED 30
+#define ENEMY_SPEED 1
+#define ENEMY_SPEED_DIVIDER 3
 #define LASER_SPEED 3
 #define LASER_Y_OFFSET 3
 
@@ -42,9 +44,11 @@ int characterX16, characterX16ConveyorVel, characterY16, characterYVel16, charac
 bool characterLanded, characterFacingRight;
 bool gameOver;
 uint32_t gameFallCounter;
+uint32_t gameEnemyMovementCounter;
 uint32_t nextCloudSpawnTick;
 uint32_t nextBulletSpawnTick;
 uint32_t nextMineSpawnTick;
+uint32_t nextEnemySpawnTick;
 uint32_t messageEndTick;
 char message[GRAPHIC_PIXEL_WIDTH/6+1];
 
@@ -53,6 +57,7 @@ int FRAME_RATE_TABLE[] = {100, 90, 81, 72, 65, 59, 53, 47, 43, 38, 34, 31, 28, 2
 int BULLET_SPAWN_RATE_TABLE[] = {-1, 1700, 1444, 1228, 1044, 887, 754, 641, 544, 463, 393, 334, 284, 241, 205, 174, 148, 126, 107, 91}; //1000*0.85**i
 int MINE_SPAWN_RATE_TABLE[] = {-1, 180, 162, 145, 131, 118, 106, 95, 86, 77, 69, 62, 56, 50, 45, 41, 37, 33, 30, 27}; //200*0.9**i
 int CONVEYOR_RATE_TABLE[] = {0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95}; //i*20
+int ENEMY_SPAWN_RATE_TABLE[] = {-1, 900, 810, 729, 656, 590, 531, 478, 430, 387, 348, 313, 282, 254, 228, 205, 185, 166, 150, 135}; //1000*0.9**i
 
 //Game difficulty variables
 unsigned int frameRateLevel;
@@ -83,9 +88,11 @@ void gameInit(void){
 	characterFacingRight = true;
 
 	gameFallCounter = 0;
+	gameEnemyMovementCounter = 0;
 	nextCloudSpawnTick = 0;
 	nextBulletSpawnTick = UINT32_MAX;
 	nextMineSpawnTick = UINT32_MAX;
+	nextEnemySpawnTick = UINT32_MAX;
 
 	frameRateLevel = 0;
 	bulletSpawnRateLevel = 0;
@@ -117,7 +124,7 @@ void spawnBullet(void){
 		speed = -speed;
 	struct GameObject *bullet;
 	if(speed<0)
-		bullet = gameObjectNew(GAME_OBJECT_BULLET, GRAPHIC_PIXEL_WIDTH, y);
+		bullet = gameObjectNew(GAME_OBJECT_BULLET, GRAPHIC_PIXEL_WIDTH-1, y); //GRAPHIC_PIXEL_WIDTH=128 would be an overflow
 	else
 		bullet = gameObjectNew(GAME_OBJECT_BULLET, -BULLET_WIDTH, y);
 	bullet->extra = speed;
@@ -137,6 +144,18 @@ void spawnMine(void){
 	nextMineSpawnTick = systemGetTick()
 							+(rand()%(MINE_SPAWN_RATE_TABLE[mineSpawnRateLevel]/2)
 							+MINE_SPAWN_RATE_TABLE[mineSpawnRateLevel]/2)*FRAME_RATE_TABLE[frameRateLevel];
+}
+
+void spawnEnemy(void){
+	if(rand()%2)
+		gameObjectNew(GAME_OBJECT_ENEMY, GRAPHIC_PIXEL_WIDTH-1, 0); //The y will be calaculated every frame
+	else
+		gameObjectNew(GAME_OBJECT_ENEMY, -ENEMY_WIDTH, 0); //The y will be calaculated every frame
+
+	//Set the time tick to spawn the next cloud
+	nextEnemySpawnTick = systemGetTick()
+							+(rand()%(ENEMY_SPAWN_RATE_TABLE[enemySpawnRateLevel]/2)
+							+ENEMY_SPAWN_RATE_TABLE[enemySpawnRateLevel]/2)*FRAME_RATE_TABLE[frameRateLevel];
 }
 
 void spawnLaser(void){
@@ -179,6 +198,7 @@ void increasesDifficulty(void){
 			difficultyIncreased = true;
 		}else if(type==4 && enemySpawnRateLevel<MAX_LEVEL_EACH){
 			enemySpawnRateLevel++;
+			spawnEnemy();
 			strcpy(message, ENEMY_RATE_DIFFICULTY_INCREASE_TEXT);
 			difficultyIncreased = true;
 		}
@@ -250,8 +270,15 @@ void processGameLogic(void){
 	if(systemGetTick()>=nextMineSpawnTick)
 		spawnMine();
 
+	if(systemGetTick()>=nextEnemySpawnTick)
+		spawnEnemy();
+
 	if(gameFallCounter>=GAME_SCENE_FALL_INTERVAL_IN_FRAMES)
 		gameFallCounter = 0;
+
+
+	if(gameEnemyMovementCounter>=ENEMY_SPEED_DIVIDER)
+		gameEnemyMovementCounter = 0;
 
 	for(size_t i=0; i<GAME_OBJECT_NUM; i++){
 		switch(gameObjectArray[i].type){
@@ -278,6 +305,25 @@ void processGameLogic(void){
 				if(gameObjectArray[i].y+MINE_HEIGHT<0)
 					gameObjectDelete(&gameObjectArray[i]);
 			break;
+			//Process enemy movement
+			case GAME_OBJECT_ENEMY:
+			{
+				int diff = (gameObjectArray[i].x+ENEMY_WIDTH/2)-(character->x+CHARACTER_WIDTH/2);
+				if(gameEnemyMovementCounter==0){
+					if(diff < 0){ //Enemy on the left
+						gameObjectArray[i].x += ENEMY_SPEED;
+						gameObjectArray[i].extra = true;
+					}else{ //Enemy on the right
+						gameObjectArray[i].x -= ENEMY_SPEED;
+						gameObjectArray[i].extra = false;
+					}
+				}
+				if(abs(diff)>CHARACTER_WIDTH)
+					gameObjectArray[i].y = character->y-ENEMY_HEIGHT;
+				else
+					gameObjectArray[i].y = character->y-ENEMY_HEIGHT+(CHARACTER_WIDTH-abs(diff));
+			}
+			break;
 			//Process laser movement
 			case GAME_OBJECT_LASER:
 				gameObjectArray[i].x += gameObjectArray[i].extra;
@@ -288,9 +334,9 @@ void processGameLogic(void){
 			default:
 			break;
 		}
-		//Process bullet movement
 	}
 	gameFallCounter++;
+	gameEnemyMovementCounter++;
 
 	//Process character movement: check if the character is landed
 	if(characterYVel16>=GAME_CHARACTER_Y16_ACCEL*2)
@@ -305,7 +351,8 @@ void processGameLogic(void){
 		characterYVel16 = (MIN_HEIGHT_OF_COLLIDIBLE_OBJECT-2)*16;
 	characterY16 += characterYVel16;
 	character->y = (characterY16+8)/16;
-	
+
+	//Process collision handling
 	for(size_t i=0; i<GAME_OBJECT_NUM; i++){
 		switch(gameObjectArray[i].type){
 			case GAME_OBJECT_CLOUD:
@@ -352,6 +399,20 @@ void processGameLogic(void){
 				if(AABB(character->x, character->y, CHARACTER_WIDTH, CHARACTER_HEIGHT,
 				gameObjectArray[i].x, gameObjectArray[i].y, MINE_WIDTH, MINE_HEIGHT)){
 					gameOver = true;
+				}
+			break;
+			case GAME_OBJECT_ENEMY:
+				if(AABB(character->x, character->y, CHARACTER_WIDTH, CHARACTER_HEIGHT,
+				gameObjectArray[i].x, gameObjectArray[i].y, ENEMY_WIDTH, ENEMY_HEIGHT)){
+					gameOver = true;
+				}
+
+				if(laser != NULL &&
+				AABB(laser->x, laser->y, LASER_WIDTH, LASER_HEIGHT,
+				gameObjectArray[i].x, gameObjectArray[i].y, ENEMY_WIDTH, ENEMY_HEIGHT)){
+					gameObjectDelete(&gameObjectArray[i]);
+					gameObjectDelete(laser);
+					laser = NULL;
 				}
 			break;
 			default:
@@ -421,6 +482,16 @@ void renderGameObjects(void){
 					.height = MINE_HEIGHT,
 				};
 				graphicDrawImage(&graphicImage, gameObjectArray[i].x, gameObjectArray[i].y, GRAPHIC_MODE_FOREGROUND_OR);
+			}
+			break;
+			case GAME_OBJECT_ENEMY:
+			{
+				struct GraphicImage graphicImage = {
+					.image = GRAPHIC_SHAPE_RECTANGLE,
+					.width = ENEMY_WIDTH,
+					.height = ENEMY_HEIGHT,
+				};
+				graphicDrawImage(&graphicImage, gameObjectArray[i].x, gameObjectArray[i].y, GRAPHIC_MODE_BACKGROUND_OR);
 			}
 			break;
 			case GAME_OBJECT_LASER:

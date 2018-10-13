@@ -9,6 +9,8 @@
 #define BULLET_HEIGHT (7)
 #define MINE_WIDTH (5)
 #define MINE_HEIGHT (5)
+#define ENEMY_WIDTH (12)
+#define ENEMY_HEIGHT (12)
 #define LASER_WIDTH (5)
 #define LASER_HEIGHT (1)
 
@@ -28,7 +30,7 @@ struct __attribute__((packed)) GameObject{
 	enum GameObjectType type;
 	int8_t x;
 	int8_t y;
-	int8_t extra; //cloud: conveyor speed. bullet/mines/enemies: movement speed.
+	int8_t extra; //cloud: conveyor speed. bullet/mines: movement speed. enemy: facing right
 };
 
 extern struct GameObject gameObjectArray[GAME_OBJECT_NUM];

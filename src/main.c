@@ -166,8 +166,8 @@ void processGameLogic(void){
 		characterLanded = false;
 	character->x = (characterX16+8)/16;
 	characterYVel16 += GAME_CHARACTER_Y16_ACCEL;
-	if(characterYVel16>(MIN_HEIGHT_OF_COLLIDIBLE_OBJECT-1)*16) //Limits the max fall velocity to avoid breaking collision detection
-		characterYVel16 = (MIN_HEIGHT_OF_COLLIDIBLE_OBJECT-1)*16;
+	if(characterYVel16>(MIN_HEIGHT_OF_COLLIDIBLE_OBJECT-2)*16) //Limits the max fall velocity to avoid breaking collision detection
+		characterYVel16 = (MIN_HEIGHT_OF_COLLIDIBLE_OBJECT-2)*16;
 	characterY16 += characterYVel16;
 	character->y = (characterY16+8)/16;
 	

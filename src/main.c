@@ -62,7 +62,12 @@ void processGameLogic(void){
 			 * The X-axis collision detection is same as AABB algorithm
 			 * However, for a Y-axis, it's designed in a way that the collision is
 			 * detected only if the bottom of the character (character->y+CHARACTER_HEIGHT) is
-			 * higher than the bottom of the object (cloud->y+CLOUD_HEIGHT).
+			 * higher than the bottom of the cloud (cloud->y+CLOUD_HEIGHT).
+			 *
+			 * Reasoning: If the feet of the character is higher than the bottom of the cloud,
+			 * the character would climb the cloud and reaches its top.
+			 * However, if its feet is below the bottom of the cloud, there's no way that he
+			 * could get to the top of the cloud. Hence the fall and there's no "collision" detected.
 			 */
 			if(character->x+CHARACTER_WIDTH > cloud->x && character->x < cloud->x+CLOUD_WIDTH &&
 				character->y+CHARACTER_HEIGHT > cloud->y && character->y+CHARACTER_HEIGHT < cloud->y+CLOUD_HEIGHT){

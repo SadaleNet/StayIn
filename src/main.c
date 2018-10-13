@@ -10,11 +10,11 @@
 #define GAME_CHARACTER_INITIAL_Y 20
 #define GAME_CHARACTER_Y16_ACCEL 3
 #define GAME_SCENE_FALL_RATE 1
-#define GAME_SCENE_FALL_INTERVAL 100
+#define GAME_SCENE_FALL_INTERVAL_IN_FRAMES 2
 #define CHARACTER_JUMP_VELOCITY -32
 #define CHARACTER_MOVEMENT_SPEED_16 16
-#define CLOUD_SPAWN_MIN_INTERVAL 5000
-#define CLOUD_SPAWN_MAX_INTERVAL 10000
+#define CLOUD_SPAWN_MIN_INTERVAL_IN_FRAMES 50
+#define CLOUD_SPAWN_MAX_INTERVAL_IN_FRAMES 100
 
 #define GAME_OVER_TEXT "SCORE:%i HI:%i"
 #define GAME_OVER_TEXT_X 0
@@ -25,7 +25,7 @@ int characterX16, characterY16, characterYVel16, characterYAccel16;
 bool characterLanded;
 int score;
 bool gameOver;
-uint32_t previousGameFallTick;
+uint32_t gameFallCounter;
 uint32_t nextCloudSpawnTick;
 struct GameObject *character;
 uint8_t lcdDmaBuffer[GRAPHIC_WIDTH][GRAPHIC_HEIGHT];
@@ -38,7 +38,7 @@ void gameInit(void){
 	characterYVel16 = 0;
 	characterLanded = false;
 
-	previousGameFallTick = 0;
+	gameFallCounter = 0;
 	nextCloudSpawnTick = 0;
 
 	score = 0;
@@ -73,8 +73,8 @@ void processGameLogic(void){
 		gameObjectNew(GAME_OBJECT_CLOUD, cloudX, 64);
 		//Set the time tick to spawn the next cloud
 		nextCloudSpawnTick = systemGetTick()
-								+rand()%(CLOUD_SPAWN_MAX_INTERVAL-CLOUD_SPAWN_MIN_INTERVAL)
-								+CLOUD_SPAWN_MIN_INTERVAL;
+								+(rand()%(CLOUD_SPAWN_MAX_INTERVAL_IN_FRAMES-CLOUD_SPAWN_MIN_INTERVAL_IN_FRAMES)
+								+CLOUD_SPAWN_MIN_INTERVAL_IN_FRAMES)*FRAME_PERIOD;
 		if(character==NULL){
 			character = gameObjectNew(GAME_OBJECT_CHARACTER,
 										cloudX+CLOUD_WIDTH/2-CHARACTER_WIDTH/2,
@@ -86,7 +86,7 @@ void processGameLogic(void){
 
 
 	//Process cloud movement
-	if(systemGetTick()-previousGameFallTick>GAME_SCENE_FALL_INTERVAL){
+	if(gameFallCounter>=GAME_SCENE_FALL_INTERVAL_IN_FRAMES){
 		for(size_t i=0; i<GAME_OBJECT_NUM; i++){
 			if(gameObjectArray[i].type==GAME_OBJECT_CLOUD){
 				//Move the each cloud up
@@ -96,8 +96,9 @@ void processGameLogic(void){
 					gameObjectDelete(&gameObjectArray[i]);
 			}
 		}
-		previousGameFallTick = systemGetTick();
+		gameFallCounter = 0;
 	}
+	gameFallCounter++;
 	//Process character movement
 	if(characterYVel16>=GAME_CHARACTER_Y16_ACCEL)
 		characterLanded = false;

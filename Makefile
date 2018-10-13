@@ -39,6 +39,7 @@ $(OUTPUT_BIN): $(OUTPUT_DIR)/$(OUTPUT_ELF)
 all: $(OUTPUT_BIN)
 
 .PHONY: run clean
+.PRECIOUS: $(OUTPUT_DIR)/%.o
 
 run: all
 	openocd  -f /usr/share/openocd/scripts/interface/stlink-v2.cfg -f /usr/share/openocd/scripts/target/stm32f0x.cfg -c init -c "reset init" -c "flash write_image erase $(OUTPUT_DIR)/$(OUTPUT_BIN) 0x08000400" -c init -c "reset run"

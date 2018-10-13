@@ -8,7 +8,6 @@
 
 #define FRAME_PERIOD 100
 #define GAME_CHARACTER_INITIAL_X (GRAPHIC_WIDTH/2-CHARACTER_WIDTH/2)
-#define GAME_CHARACTER_INITIAL_Y 20
 #define GAME_CHARACTER_Y16_ACCEL 3
 #define GAME_SCENE_FALL_RATE 1
 #define GAME_SCENE_FALL_INTERVAL 100
@@ -33,10 +32,8 @@ uint8_t lcdDmaBuffer[GRAPHIC_WIDTH][GRAPHIC_HEIGHT];
 void gameInit(void){
 	srand(systemGetTick());
 	gameObjectInit();
-	character = gameObjectNew(GAME_OBJECT_CHARACTER, GAME_CHARACTER_INITIAL_X, GAME_CHARACTER_INITIAL_Y);
+	character = NULL;
 
-	characterX16 = GAME_CHARACTER_INITIAL_X*16;
-	characterY16 = GAME_CHARACTER_INITIAL_Y*16;
 	characterYVel16 = 0;
 	characterLanded = false;
 
@@ -69,14 +66,21 @@ void handleKeyInput(void){
 }
 
 void processGameLogic(void){
-
 	//Spawn new cloud
 	if(systemGetTick()>=nextCloudSpawnTick){
-		gameObjectNew(GAME_OBJECT_CLOUD, rand()%(GRAPHIC_WIDTH-CLOUD_WIDTH), 64);
+		int cloudX = rand()%(GRAPHIC_WIDTH-CLOUD_WIDTH);
+		gameObjectNew(GAME_OBJECT_CLOUD, cloudX, 64);
 		//Set the time tick to spawn the next cloud
 		nextCloudSpawnTick = systemGetTick()
 								+rand()%(CLOUD_SPAWN_MAX_INTERVAL-CLOUD_SPAWN_MIN_INTERVAL)
 								+CLOUD_SPAWN_MIN_INTERVAL;
+		if(character==NULL){
+			character = gameObjectNew(GAME_OBJECT_CHARACTER,
+										cloudX+CLOUD_WIDTH/2-CHARACTER_WIDTH/2,
+										GAME_CHARACTER_INITIAL_Y);
+			characterX16 = character->x*16;
+			characterY16 = character->y*16;
+		}
 	}
 
 

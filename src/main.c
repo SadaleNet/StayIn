@@ -6,6 +6,7 @@
 #include "ilomusi.h"
 
 #define FRAME_PERIOD 100
+uint8_t lcdDmaBuffer[GRAPHIC_WIDTH][GRAPHIC_HEIGHT];
 
 int main(void){
 	/* TODO: game initialization goes here */
@@ -14,7 +15,6 @@ int main(void){
 	graphicSetDrawBuffer(lcdDmaBuffer);
 
 	uint32_t previousTick = systemGetTick();
-	uint32_t previousButtonHeldTick = previousTick;
 	while(true){
 		//wait for completion of the previous rendering
 		while(!graphicIsDisplayReady()){} //Do not start drawing until the rendering is completed
@@ -28,7 +28,7 @@ int main(void){
 		//Frame limiting
 		int32_t timeElapsed = (systemGetTick()-previousTick);
 		if(timeElapsed<FRAME_PERIOD)
-			systemSleep(FRAME_PERIOD-timeElapsed, boostMode);
+			systemSleep(FRAME_PERIOD-timeElapsed, false);
 		previousTick = systemGetTick();
 	}
 	return 0;

@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include "ilomusi.h"
 #include "gameObject.h"
 
@@ -28,17 +29,22 @@
 #define ENEMY_RATE_DIFFICULTY_INCREASE_TEXT "MORE ENEMIES"
 #define MESSAGE_DURATION 3000
 
+#define BULLET_MIN_SPEED 1
+#define BULLET_MAX_SPEED 3
+
 
 int characterX16, characterY16, characterYVel16, characterYAccel16;
 bool characterLanded;
 bool gameOver;
 uint32_t gameFallCounter;
 uint32_t nextCloudSpawnTick;
+uint32_t nextBulletSpawnTick;
 uint32_t messageEndTick;
 char message[GRAPHIC_PIXEL_WIDTH/6+1];
 
 //Game difficulty tables
-int FRAME_RATE_TABLE[] = {100, 90, 81, 72, 65, 59, 53, 47, 43, 38, 34, 31, 28, 25, 22, 20, 18, 16, 15, 13};
+int FRAME_RATE_TABLE[] = {100, 90, 81, 72, 65, 59, 53, 47, 43, 38, 34, 31, 28, 25, 22, 20, 18, 16, 15, 13}; //100*0.9**i
+int BULLET_SPAWN_RATE_TABLE[] = {-1, 1700, 1444, 1228, 1044, 887, 754, 641, 544, 463, 393, 334, 284, 241, 205, 174, 148, 126, 107, 91}; //200*0.85**i
 
 //Game difficulty variables
 unsigned int frameRateLevel;
@@ -46,7 +52,7 @@ unsigned int bulletSpawnRateLevel;
 unsigned int minesSpawnRateLevel;
 unsigned int platformDifficultyLevel;
 unsigned int enemySpawnRateLevel;
-#define MAX_LEVEL_EACH 1
+#define MAX_LEVEL_EACH 20
 #define MAX_TOTAL_LEVEL MAX_LEVEL_EACH*5
 
 struct GameObject *character;
@@ -66,6 +72,7 @@ void gameInit(void){
 
 	gameFallCounter = 0;
 	nextCloudSpawnTick = 0;
+	nextBulletSpawnTick = UINT32_MAX;
 
 	frameRateLevel = 0;
 	bulletSpawnRateLevel = 0;
@@ -82,12 +89,31 @@ void spawnCoin(void){
 	int x, y;
 	do{ //Keep randomly picking a position until we find the one that isn't close with the character
 		x = rand()%(GRAPHIC_PIXEL_WIDTH-COIN_WIDTH);
-		y = rand()%(GRAPHIC_PIXEL_HEIGHT-COIN_HEIGHT);
+		//Double the -COIN_HEIGHT to prevent the coin from getting to bottom, making it difficult to get collected
+		y = rand()%(GRAPHIC_PIXEL_HEIGHT-COIN_HEIGHT*2);
 	}while(AABB(x,y,COIN_WIDTH,COIN_HEIGHT,
 		character->x-COIN_SPAWN_CHARACTER_DISTANCE, character->y-COIN_SPAWN_CHARACTER_DISTANCE,
 		CHARACTER_WIDTH+COIN_SPAWN_CHARACTER_DISTANCE*2, CHARACTER_HEIGHT+COIN_SPAWN_CHARACTER_DISTANCE*2));
 	gameObjectNew(GAME_OBJECT_COIN, x, y);
 }
+
+void spawnBullet(void){
+	int y = rand()%(GRAPHIC_PIXEL_HEIGHT-BULLET_HEIGHT);
+	int8_t speed = rand()%(BULLET_MAX_SPEED-BULLET_MIN_SPEED)+BULLET_MIN_SPEED;
+	if(rand()%2)
+		speed = -speed;
+	struct GameObject *bullet;
+	if(speed<0)
+		bullet = gameObjectNew(GAME_OBJECT_BULLET, GRAPHIC_PIXEL_WIDTH, y);
+	else
+		bullet = gameObjectNew(GAME_OBJECT_BULLET, -BULLET_WIDTH, y);
+	bullet->extra = speed;
+	//Set the time tick to spawn the next cloud
+	nextBulletSpawnTick = systemGetTick()
+							+(rand()%(BULLET_SPAWN_RATE_TABLE[bulletSpawnRateLevel]/2)
+							+BULLET_SPAWN_RATE_TABLE[bulletSpawnRateLevel]/2)*FRAME_RATE_TABLE[frameRateLevel];
+}
+
 
 int getTotalLevel(){
 	return frameRateLevel+bulletSpawnRateLevel+minesSpawnRateLevel+platformDifficultyLevel+enemySpawnRateLevel;
@@ -103,6 +129,7 @@ void increasesDifficulty(void){
 			difficultyIncreased = true;
 		}else if(type==1 && bulletSpawnRateLevel<MAX_LEVEL_EACH){
 			bulletSpawnRateLevel++;
+			spawnBullet();
 			strcpy(message, BULLETS_PROJECTILE_DIFFICULTY_INCREASE_TEXT);
 			difficultyIncreased = true;
 		}else if(type==2 && minesSpawnRateLevel<MAX_LEVEL_EACH){
@@ -162,20 +189,35 @@ void processGameLogic(void){
 			spawnCoin();
 		}
 	}
+	
+	if(systemGetTick()>=nextBulletSpawnTick)
+		spawnBullet();
 
-
-	//Process cloud movement
-	if(gameFallCounter>=GAME_SCENE_FALL_INTERVAL_IN_FRAMES){
-		for(size_t i=0; i<GAME_OBJECT_NUM; i++){
-			if(gameObjectArray[i].type==GAME_OBJECT_CLOUD){
-				//Move the each cloud up
-				gameObjectArray[i].y -= GAME_SCENE_FALL_RATE;
-				//If the cloud had rised to too high and disappeared from the screen, delete it.
-				if(gameObjectArray[i].y+CLOUD_HEIGHT<0)
-					gameObjectDelete(&gameObjectArray[i]);
-			}
-		}
+	if(gameFallCounter>=GAME_SCENE_FALL_INTERVAL_IN_FRAMES)
 		gameFallCounter = 0;
+
+	for(size_t i=0; i<GAME_OBJECT_NUM; i++){
+		//Process cloud movement
+		switch(gameObjectArray[i].type){
+			case GAME_OBJECT_CLOUD:
+				if(gameFallCounter == 0){
+					//Move the each cloud up
+					gameObjectArray[i].y -= GAME_SCENE_FALL_RATE;
+					//If the cloud had rised to too high and disappeared from the screen, delete it.
+					if(gameObjectArray[i].y+CLOUD_HEIGHT<0)
+						gameObjectDelete(&gameObjectArray[i]);
+					gameFallCounter = 0;
+				}
+			break;
+			case GAME_OBJECT_BULLET:
+				gameObjectArray[i].x += gameObjectArray[i].extra;
+				if(gameObjectArray[i].x+BULLET_WIDTH<0 || gameObjectArray[i].x >= GRAPHIC_PIXEL_WIDTH)
+					gameObjectDelete(&gameObjectArray[i]);
+			break;
+			default:
+			break;
+		}
+		//Process bullet movement
 	}
 	gameFallCounter++;
 	//Process character movement
@@ -223,6 +265,12 @@ void processGameLogic(void){
 					}
 				}
 			break;
+			case GAME_OBJECT_BULLET:
+				if(AABB(character->x, character->y, CHARACTER_WIDTH, CHARACTER_HEIGHT,
+				gameObjectArray[i].x, gameObjectArray[i].y, BULLET_WIDTH, BULLET_HEIGHT)){
+					gameOver = true;
+				}
+			break;
 			default:
 			break;
 		}
@@ -262,6 +310,16 @@ void renderGameObjects(void){
 					.image = GRAPHIC_SHAPE_RECTANGLE,
 					.width = COIN_WIDTH,
 					.height = COIN_HEIGHT,
+				};
+				graphicDrawImage(&graphicImage, gameObjectArray[i].x, gameObjectArray[i].y, GRAPHIC_MODE_FOREGROUND_OR);
+			}
+			break;
+			case GAME_OBJECT_BULLET:
+			{
+				struct GraphicImage graphicImage = {
+					.image = GRAPHIC_SHAPE_RECTANGLE,
+					.width = BULLET_WIDTH,
+					.height = BULLET_HEIGHT,
 				};
 				graphicDrawImage(&graphicImage, gameObjectArray[i].x, gameObjectArray[i].y, GRAPHIC_MODE_FOREGROUND_OR);
 			}

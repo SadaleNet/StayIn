@@ -6,13 +6,12 @@
 #include "ilomusi.h"
 #include "gameObject.h"
 
-#define FRAME_PERIOD 100
 #define GAME_CHARACTER_INITIAL_Y 20
 #define GAME_CHARACTER_Y16_ACCEL 3
 #define GAME_SCENE_FALL_RATE 1
 #define GAME_SCENE_FALL_INTERVAL_IN_FRAMES 2
-#define CHARACTER_JUMP_VELOCITY -32
-#define CHARACTER_MOVEMENT_SPEED_16 16
+#define CHARACTER_JUMP_VELOCITY -40
+#define CHARACTER_MOVEMENT_SPEED_16 32
 #define CLOUD_SPAWN_MIN_INTERVAL_IN_FRAMES 50
 #define CLOUD_SPAWN_MAX_INTERVAL_IN_FRAMES 100
 
@@ -27,6 +26,17 @@ int score;
 bool gameOver;
 uint32_t gameFallCounter;
 uint32_t nextCloudSpawnTick;
+
+//Game difficulty tables
+int FRAME_RATE_TABLE[] = {100, 90, 81, 72, 65, 59, 53, 47, 43, 38, 34, 31, 28, 25, 22, 20, 18, 16, 15, 13};
+
+//Game difficulty variables
+unsigned int frameRateLevel;
+unsigned int horizontalProjectileLevel;
+unsigned int verticalProjectileLevel;
+unsigned int platformXAxisMovementLevel;
+unsigned int verticalProjectileLevel;
+
 struct GameObject *character;
 uint8_t lcdDmaBuffer[GRAPHIC_WIDTH][GRAPHIC_HEIGHT];
 
@@ -40,6 +50,12 @@ void gameInit(void){
 
 	gameFallCounter = 0;
 	nextCloudSpawnTick = 0;
+
+	frameRateLevel = 0;
+	horizontalProjectileLevel = 0;
+	verticalProjectileLevel = 0;
+	platformXAxisMovementLevel = 0;
+	verticalProjectileLevel = 0;
 
 	score = 0;
 	gameOver = false;
@@ -74,7 +90,7 @@ void processGameLogic(void){
 		//Set the time tick to spawn the next cloud
 		nextCloudSpawnTick = systemGetTick()
 								+(rand()%(CLOUD_SPAWN_MAX_INTERVAL_IN_FRAMES-CLOUD_SPAWN_MIN_INTERVAL_IN_FRAMES)
-								+CLOUD_SPAWN_MIN_INTERVAL_IN_FRAMES)*FRAME_PERIOD;
+								+CLOUD_SPAWN_MIN_INTERVAL_IN_FRAMES)*FRAME_RATE_TABLE[frameRateLevel];
 		if(character==NULL){
 			character = gameObjectNew(GAME_OBJECT_CHARACTER,
 										cloudX+CLOUD_WIDTH/2-CHARACTER_WIDTH/2,
@@ -196,8 +212,8 @@ int main(void){
 
 		//Frame limiting
 		int32_t timeElapsed = (systemGetTick()-previousTick);
-		if(timeElapsed<FRAME_PERIOD)
-			systemSleep(FRAME_PERIOD-timeElapsed, false);
+		if(timeElapsed<FRAME_RATE_TABLE[frameRateLevel])
+			systemSleep(FRAME_RATE_TABLE[frameRateLevel]-timeElapsed, false);
 		previousTick = systemGetTick();
 	}
 	return 0;

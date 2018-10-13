@@ -25,7 +25,7 @@ struct __attribute__((packed)) GameObject{
 	enum GameObjectType type;
 	int8_t x;
 	int8_t y;
-	int8_t extra;
+	int8_t extra; //cloud: conveyor speed. bullet/mines/enemies: movement speed.
 };
 
 extern struct GameObject gameObjectArray[GAME_OBJECT_NUM];

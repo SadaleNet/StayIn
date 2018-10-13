@@ -33,9 +33,10 @@
 #define BULLET_MAX_SPEED 3
 #define MINE_MIN_SPEED 2
 #define MINE_MAX_SPEED 5
+#define CONVEYOR_MIN_SPEED 10
+#define CONVEYOR_MAX_SPEED 30
 
-
-int characterX16, characterY16, characterYVel16, characterYAccel16;
+int characterX16, characterX16ConveyorVel, characterY16, characterYVel16, characterYAccel16;
 bool characterLanded;
 bool gameOver;
 uint32_t gameFallCounter;
@@ -47,8 +48,9 @@ char message[GRAPHIC_PIXEL_WIDTH/6+1];
 
 //Game difficulty tables
 int FRAME_RATE_TABLE[] = {100, 90, 81, 72, 65, 59, 53, 47, 43, 38, 34, 31, 28, 25, 22, 20, 18, 16, 15, 13}; //100*0.9**i
-int BULLET_SPAWN_RATE_TABLE[] = {-1, 1700, 1444, 1228, 1044, 887, 754, 641, 544, 463, 393, 334, 284, 241, 205, 174, 148, 126, 107, 91}; //200*0.85**i
+int BULLET_SPAWN_RATE_TABLE[] = {-1, 1700, 1444, 1228, 1044, 887, 754, 641, 544, 463, 393, 334, 284, 241, 205, 174, 148, 126, 107, 91}; //1000*0.85**i
 int MINE_SPAWN_RATE_TABLE[] = {-1, 180, 162, 145, 131, 118, 106, 95, 86, 77, 69, 62, 56, 50, 45, 41, 37, 33, 30, 27}; //200*0.9**i
+int CONVEYOR_RATE_TABLE[] = {0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95}; //i*20
 
 //Game difficulty variables
 unsigned int frameRateLevel;
@@ -71,6 +73,7 @@ void gameInit(void){
 	gameObjectInit();
 	character = NULL;
 
+	characterX16ConveyorVel = 0;
 	characterYVel16 = 0;
 	characterLanded = false;
 
@@ -191,11 +194,20 @@ void processGameLogic(void){
 	//Spawn new cloud
 	if(systemGetTick()>=nextCloudSpawnTick){
 		int cloudX = rand()%(GRAPHIC_PIXEL_WIDTH-CLOUD_WIDTH);
-		gameObjectNew(GAME_OBJECT_CLOUD, cloudX, 64);
+		struct GameObject *cloud = gameObjectNew(GAME_OBJECT_CLOUD, cloudX, 64);
 		//Set the time tick to spawn the next cloud
 		nextCloudSpawnTick = systemGetTick()
 								+(rand()%(CLOUD_SPAWN_MAX_INTERVAL_IN_FRAMES-CLOUD_SPAWN_MIN_INTERVAL_IN_FRAMES)
 								+CLOUD_SPAWN_MIN_INTERVAL_IN_FRAMES)*FRAME_RATE_TABLE[frameRateLevel];
+
+		if(rand()%100 < CONVEYOR_RATE_TABLE[platformDifficultyLevel]){
+			int8_t speed = rand()%(CONVEYOR_MAX_SPEED-CONVEYOR_MIN_SPEED)+CONVEYOR_MIN_SPEED;
+			if(rand()%2)
+				speed = -speed;
+			cloud->extra = speed;
+		}else{
+			cloud->extra = 0;
+		}
 		//Also spawn the character at the beginning of the game
 		if(character==NULL){
 			character = gameObjectNew(GAME_OBJECT_CHARACTER,
@@ -245,9 +257,14 @@ void processGameLogic(void){
 		//Process bullet movement
 	}
 	gameFallCounter++;
-	//Process character movement
-	if(characterYVel16>=GAME_CHARACTER_Y16_ACCEL)
+
+	//Process character movement: check if the character is landed
+	if(characterYVel16>=GAME_CHARACTER_Y16_ACCEL*2)
 		characterLanded = false;
+	if(!characterLanded)
+		characterX16ConveyorVel = 0;
+	////Process character movement: calculate X and Y position and velocity
+	characterX16 += characterX16ConveyorVel;
 	character->x = (characterX16+8)/16;
 	characterYVel16 += GAME_CHARACTER_Y16_ACCEL;
 	if(characterYVel16>(MIN_HEIGHT_OF_COLLIDIBLE_OBJECT-2)*16) //Limits the max fall velocity to avoid breaking collision detection
@@ -276,6 +293,7 @@ void processGameLogic(void){
 					character->y = cloud->y-CHARACTER_HEIGHT;
 					characterY16 = character->y*16;
 					characterYVel16 = 0;
+					characterX16ConveyorVel = cloud->extra;
 					characterLanded = true;
 				}
 			}
@@ -328,10 +346,16 @@ void renderGameObjects(void){
 			case GAME_OBJECT_CLOUD:
 			{
 				struct GraphicImage graphicImage = {
-					.image = GRAPHIC_SHAPE_RECTANGLE,
 					.width = CLOUD_WIDTH,
 					.height = CLOUD_HEIGHT,
 				};
+				if(gameObjectArray[i].extra>0){ // >>>>>> right conveyor
+					graphicImage.image = GRAPHIC_SHAPE_RECTANGLE;
+				}else if(gameObjectArray[i].extra<0){ // <<<<<< left conveyor
+					graphicImage.image = GRAPHIC_SHAPE_RECTANGLE;
+				}else{ //stationary cloud
+					graphicImage.image = GRAPHIC_SHAPE_RECTANGLE;
+				}
 				graphicDrawImage(&graphicImage, gameObjectArray[i].x, gameObjectArray[i].y, GRAPHIC_MODE_FOREGROUND_OR);
 			}
 			break;

@@ -7,6 +7,8 @@
 #define CLOUD_HEIGHT (5)
 #define BULLET_WIDTH (10)
 #define BULLET_HEIGHT (7)
+#define MINE_WIDTH (5)
+#define MINE_HEIGHT (5)
 
 enum GameObjectType{
 	NO_OBJECT,

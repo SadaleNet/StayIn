@@ -31,6 +31,8 @@
 
 #define BULLET_MIN_SPEED 1
 #define BULLET_MAX_SPEED 3
+#define MINE_MIN_SPEED 2
+#define MINE_MAX_SPEED 5
 
 
 int characterX16, characterY16, characterYVel16, characterYAccel16;
@@ -39,17 +41,19 @@ bool gameOver;
 uint32_t gameFallCounter;
 uint32_t nextCloudSpawnTick;
 uint32_t nextBulletSpawnTick;
+uint32_t nextMineSpawnTick;
 uint32_t messageEndTick;
 char message[GRAPHIC_PIXEL_WIDTH/6+1];
 
 //Game difficulty tables
 int FRAME_RATE_TABLE[] = {100, 90, 81, 72, 65, 59, 53, 47, 43, 38, 34, 31, 28, 25, 22, 20, 18, 16, 15, 13}; //100*0.9**i
 int BULLET_SPAWN_RATE_TABLE[] = {-1, 1700, 1444, 1228, 1044, 887, 754, 641, 544, 463, 393, 334, 284, 241, 205, 174, 148, 126, 107, 91}; //200*0.85**i
+int MINE_SPAWN_RATE_TABLE[] = {-1, 180, 162, 145, 131, 118, 106, 95, 86, 77, 69, 62, 56, 50, 45, 41, 37, 33, 30, 27}; //200*0.9**i
 
 //Game difficulty variables
 unsigned int frameRateLevel;
 unsigned int bulletSpawnRateLevel;
-unsigned int minesSpawnRateLevel;
+unsigned int mineSpawnRateLevel;
 unsigned int platformDifficultyLevel;
 unsigned int enemySpawnRateLevel;
 #define MAX_LEVEL_EACH 20
@@ -73,10 +77,11 @@ void gameInit(void){
 	gameFallCounter = 0;
 	nextCloudSpawnTick = 0;
 	nextBulletSpawnTick = UINT32_MAX;
+	nextMineSpawnTick = UINT32_MAX;
 
 	frameRateLevel = 0;
 	bulletSpawnRateLevel = 0;
-	minesSpawnRateLevel = 0;
+	mineSpawnRateLevel = 0;
 	platformDifficultyLevel = 0;
 	enemySpawnRateLevel = 0;
 	messageEndTick = 0;
@@ -114,9 +119,20 @@ void spawnBullet(void){
 							+BULLET_SPAWN_RATE_TABLE[bulletSpawnRateLevel]/2)*FRAME_RATE_TABLE[frameRateLevel];
 }
 
+void spawnMine(void){
+	int x = rand()%(GRAPHIC_PIXEL_WIDTH-MINE_WIDTH);
+	int8_t speed = rand()%(MINE_MAX_SPEED-MINE_MIN_SPEED)+MINE_MIN_SPEED;
+	struct GameObject *mine;
+	mine = gameObjectNew(GAME_OBJECT_MINE, x, GRAPHIC_PIXEL_HEIGHT);
+	mine->extra = speed;
+	//Set the time tick to spawn the next cloud
+	nextMineSpawnTick = systemGetTick()
+							+(rand()%(MINE_SPAWN_RATE_TABLE[mineSpawnRateLevel]/2)
+							+MINE_SPAWN_RATE_TABLE[mineSpawnRateLevel]/2)*FRAME_RATE_TABLE[frameRateLevel];
+}
 
 int getTotalLevel(){
-	return frameRateLevel+bulletSpawnRateLevel+minesSpawnRateLevel+platformDifficultyLevel+enemySpawnRateLevel;
+	return frameRateLevel+bulletSpawnRateLevel+mineSpawnRateLevel+platformDifficultyLevel+enemySpawnRateLevel;
 }
 
 void increasesDifficulty(void){
@@ -132,8 +148,9 @@ void increasesDifficulty(void){
 			spawnBullet();
 			strcpy(message, BULLETS_PROJECTILE_DIFFICULTY_INCREASE_TEXT);
 			difficultyIncreased = true;
-		}else if(type==2 && minesSpawnRateLevel<MAX_LEVEL_EACH){
-			minesSpawnRateLevel++;
+		}else if(type==2 && mineSpawnRateLevel<MAX_LEVEL_EACH){
+			mineSpawnRateLevel++;
+			spawnMine();
 			strcpy(message, MINES_PROJECTILE_RATE_DIFFICULTY_INCREASE_TEXT);
 			difficultyIncreased = true;
 		}else if(type==3 && platformDifficultyLevel<MAX_LEVEL_EACH){
@@ -193,6 +210,9 @@ void processGameLogic(void){
 	if(systemGetTick()>=nextBulletSpawnTick)
 		spawnBullet();
 
+	if(systemGetTick()>=nextMineSpawnTick)
+		spawnMine();
+
 	if(gameFallCounter>=GAME_SCENE_FALL_INTERVAL_IN_FRAMES)
 		gameFallCounter = 0;
 
@@ -212,6 +232,11 @@ void processGameLogic(void){
 			case GAME_OBJECT_BULLET:
 				gameObjectArray[i].x += gameObjectArray[i].extra;
 				if(gameObjectArray[i].x+BULLET_WIDTH<0 || gameObjectArray[i].x >= GRAPHIC_PIXEL_WIDTH)
+					gameObjectDelete(&gameObjectArray[i]);
+			break;
+			case GAME_OBJECT_MINE:
+				gameObjectArray[i].y -= gameObjectArray[i].extra;
+				if(gameObjectArray[i].y+MINE_HEIGHT<0)
 					gameObjectDelete(&gameObjectArray[i]);
 			break;
 			default:
@@ -271,6 +296,12 @@ void processGameLogic(void){
 					gameOver = true;
 				}
 			break;
+			case GAME_OBJECT_MINE:
+				if(AABB(character->x, character->y, CHARACTER_WIDTH, CHARACTER_HEIGHT,
+				gameObjectArray[i].x, gameObjectArray[i].y, MINE_WIDTH, MINE_HEIGHT)){
+					gameOver = true;
+				}
+			break;
 			default:
 			break;
 		}
@@ -320,6 +351,16 @@ void renderGameObjects(void){
 					.image = GRAPHIC_SHAPE_RECTANGLE,
 					.width = BULLET_WIDTH,
 					.height = BULLET_HEIGHT,
+				};
+				graphicDrawImage(&graphicImage, gameObjectArray[i].x, gameObjectArray[i].y, GRAPHIC_MODE_FOREGROUND_OR);
+			}
+			break;
+			case GAME_OBJECT_MINE:
+			{
+				struct GraphicImage graphicImage = {
+					.image = GRAPHIC_SHAPE_RECTANGLE,
+					.width = MINE_WIDTH,
+					.height = MINE_HEIGHT,
 				};
 				graphicDrawImage(&graphicImage, gameObjectArray[i].x, gameObjectArray[i].y, GRAPHIC_MODE_FOREGROUND_OR);
 			}

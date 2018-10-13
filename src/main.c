@@ -152,6 +152,7 @@ void processGameLogic(void){
 		nextCloudSpawnTick = systemGetTick()
 								+(rand()%(CLOUD_SPAWN_MAX_INTERVAL_IN_FRAMES-CLOUD_SPAWN_MIN_INTERVAL_IN_FRAMES)
 								+CLOUD_SPAWN_MIN_INTERVAL_IN_FRAMES)*FRAME_RATE_TABLE[frameRateLevel];
+		//Also spawn the character at the beginning of the game
 		if(character==NULL){
 			character = gameObjectNew(GAME_OBJECT_CHARACTER,
 										cloudX+CLOUD_WIDTH/2-CHARACTER_WIDTH/2,

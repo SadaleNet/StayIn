@@ -7,7 +7,7 @@
 #include "gameObject.h"
 
 #define FRAME_PERIOD 100
-#define GAME_CHARACTER_INITIAL_X (GRAPHIC_WIDTH/2-CHARACTER_WIDTH/2)
+#define GAME_CHARACTER_INITIAL_Y 20
 #define GAME_CHARACTER_Y16_ACCEL 3
 #define GAME_SCENE_FALL_RATE 1
 #define GAME_SCENE_FALL_INTERVAL 100
@@ -17,7 +17,7 @@
 
 #define GAME_OVER_TEXT "SCORE:%i HI:%i"
 #define GAME_OVER_TEXT_X 0
-#define GAME_OVER_TEXT_Y (GRAPHIC_HEIGHT-1)*8
+#define GAME_OVER_TEXT_Y GRAPHIC_PIXEL_HEIGHT-8
 
 
 int characterX16, characterY16, characterYVel16, characterYAccel16;
@@ -68,7 +68,7 @@ void handleKeyInput(void){
 void processGameLogic(void){
 	//Spawn new cloud
 	if(systemGetTick()>=nextCloudSpawnTick){
-		int cloudX = rand()%(GRAPHIC_WIDTH-CLOUD_WIDTH);
+		int cloudX = rand()%(GRAPHIC_PIXEL_WIDTH-CLOUD_WIDTH);
 		gameObjectNew(GAME_OBJECT_CLOUD, cloudX, 64);
 		//Set the time tick to spawn the next cloud
 		nextCloudSpawnTick = systemGetTick()
@@ -129,8 +129,8 @@ void processGameLogic(void){
 		}
 	}
 
-	if(character->x+CHARACTER_WIDTH<0 || character->x>GRAPHIC_WIDTH ||
-		character->y+CHARACTER_HEIGHT<0 || character->y>=GRAPHIC_HEIGHT*8)
+	if(character->x+CHARACTER_WIDTH<0 || character->x>GRAPHIC_PIXEL_WIDTH ||
+		character->y+CHARACTER_HEIGHT<0 || character->y>=GRAPHIC_PIXEL_HEIGHT)
 		gameOver = true;
 }
 
@@ -164,9 +164,9 @@ void renderGameObjects(void){
 	if(gameOver){
 		int highScore = 0; //TODO: load highScore from the saved data
 
-		char buf[GRAPHIC_WIDTH/6+1];
+		char buf[GRAPHIC_PIXEL_WIDTH/6+1];
 		sprintf(buf, GAME_OVER_TEXT, score, highScore);
-		graphicDrawText(buf, 0, GAME_OVER_TEXT_X, GAME_OVER_TEXT_Y, GRAPHIC_WIDTH, 8, GRAPHIC_MODE_FOREGROUND_AND_NOT|GRAPHIC_MODE_BACKGROUND_OR);
+		graphicDrawText(buf, 0, GAME_OVER_TEXT_X, GAME_OVER_TEXT_Y, GRAPHIC_PIXEL_WIDTH, 8, GRAPHIC_MODE_FOREGROUND_AND_NOT|GRAPHIC_MODE_BACKGROUND_OR);
 	}
 }
 

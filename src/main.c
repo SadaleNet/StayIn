@@ -16,8 +16,17 @@
 #define CLOUD_SPAWN_MIN_INTERVAL 5000
 #define CLOUD_SPAWN_MAX_INTERVAL 10000
 
+#define GAME_OVER_TEXT "SCORE:%i HI:%i"
+#define GAME_OVER_TEXT_X 0
+#define GAME_OVER_TEXT_Y (GRAPHIC_HEIGHT-1)*8
+
+
 int characterX16, characterY16, characterYVel16, characterYAccel16;
 bool characterLanded;
+int score;
+bool gameOver;
+uint32_t previousGameFallTick;
+uint32_t nextCloudSpawnTick;
 struct GameObject *character;
 uint8_t lcdDmaBuffer[GRAPHIC_WIDTH][GRAPHIC_HEIGHT];
 
@@ -30,26 +39,36 @@ void gameInit(void){
 	characterY16 = GAME_CHARACTER_INITIAL_Y*16;
 	characterYVel16 = 0;
 	characterLanded = false;
+
+	previousGameFallTick = 0;
+	nextCloudSpawnTick = 0;
+
+	score = 0;
+	gameOver = false;
 }
 
 void handleKeyInput(void){
 	uint8_t justChanged = keysGetJustChangedState();
 	uint8_t state = keysGetPressedState();
-	if((state&KEYS_LEFT)!=0)
-		characterX16 -= 16;
-	if((state&KEYS_RIGHT)!=0)
-		characterX16 += 16;
-	if((state&KEYS_UP)!=0 && (justChanged&KEYS_UP)!=0){
-		if(characterLanded){
-			characterYVel16 = CHARACTER_JUMP_VELOCITY;
-			characterLanded = false;
+	if(!gameOver){
+		if((state&KEYS_LEFT)!=0)
+			characterX16 -= 16;
+		if((state&KEYS_RIGHT)!=0)
+			characterX16 += 16;
+		if((state&KEYS_UP)!=0 && (justChanged&KEYS_UP)!=0){
+			if(characterLanded){
+				characterYVel16 = CHARACTER_JUMP_VELOCITY;
+				characterLanded = false;
+			}
 		}
+	}else{
+		//Button to restart the game
+		if((state&KEYS_2)!=0 && (justChanged&KEYS_2)!=0)
+			gameInit();
 	}
 }
 
 void processGameLogic(void){
-	static uint32_t previousGameFallTick;
-	static uint32_t nextCloudSpawnTick = 0;
 
 	//Spawn new cloud
 	if(systemGetTick()>=nextCloudSpawnTick){
@@ -105,6 +124,9 @@ void processGameLogic(void){
 			}
 		}
 	}
+
+	if(character->y+CHARACTER_HEIGHT<0 || character->y>=GRAPHIC_HEIGHT*8)
+		gameOver = true;
 }
 
 void renderGameObjects(void){
@@ -134,6 +156,13 @@ void renderGameObjects(void){
 			break;
 		}
 	}
+	if(gameOver){
+		int highScore = 0; //TODO: load highScore from the saved data
+
+		char buf[GRAPHIC_WIDTH/6+1];
+		sprintf(buf, GAME_OVER_TEXT, score, highScore);
+		graphicDrawText(buf, 0, GAME_OVER_TEXT_X, GAME_OVER_TEXT_Y, GRAPHIC_WIDTH, 8, GRAPHIC_MODE_FOREGROUND_AND_NOT|GRAPHIC_MODE_BACKGROUND_OR);
+	}
 }
 
 int main(void){
@@ -151,7 +180,8 @@ int main(void){
 
 		//Perform these functions every frame
 		handleKeyInput();
-		processGameLogic();
+		if(!gameOver)
+			processGameLogic();
 		renderGameObjects();
 		graphicDisplay(lcdDmaBuffer);
 

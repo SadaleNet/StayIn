@@ -12,7 +12,7 @@
 #define GAME_SCENE_FALL_INTERVAL_IN_FRAMES 2
 #define CHARACTER_JUMP_VELOCITY -40
 #define CHARACTER_MOVEMENT_SPEED_16 32
-#define CLOUD_SPAWN_MIN_INTERVAL_IN_FRAMES 50
+#define CLOUD_SPAWN_MIN_INTERVAL_IN_FRAMES 60
 #define CLOUD_SPAWN_MAX_INTERVAL_IN_FRAMES 100
 #define MIN_HEIGHT_OF_COLLIDIBLE_OBJECT CLOUD_HEIGHT
 #define COIN_SPAWN_CHARACTER_DISTANCE 8
@@ -21,21 +21,30 @@
 #define GAME_OVER_TEXT_X 0
 #define GAME_OVER_TEXT_Y GRAPHIC_PIXEL_HEIGHT-8
 
+#define FRAME_RATE_DIFFICULTY_INCREASE_TEXT "GAME SPEED UP"
+#define BULLETS_PROJECTILE_DIFFICULTY_INCREASE_TEXT "MORE BULLETS"
+#define MINES_PROJECTILE_RATE_DIFFICULTY_INCREASE_TEXT "MORE MINES"
+#define PLATFORM_DIFFICULTY_INCREASE_TEXT "MORE CONVEYORS"
+#define ENEMY_RATE_DIFFICULTY_INCREASE_TEXT "MORE ENEMIES"
+#define MESSAGE_DURATION 3000
+
 
 int characterX16, characterY16, characterYVel16, characterYAccel16;
 bool characterLanded;
 bool gameOver;
 uint32_t gameFallCounter;
 uint32_t nextCloudSpawnTick;
+uint32_t messageEndTick;
+char message[GRAPHIC_PIXEL_WIDTH/6+1];
 
 //Game difficulty tables
 int FRAME_RATE_TABLE[] = {100, 90, 81, 72, 65, 59, 53, 47, 43, 38, 34, 31, 28, 25, 22, 20, 18, 16, 15, 13};
 
 //Game difficulty variables
 unsigned int frameRateLevel;
-unsigned int horizontalProjectileLevel;
-unsigned int verticalProjectileLevel;
-unsigned int platformXAxisMovementLevel;
+unsigned int bulletSpawnRateLevel;
+unsigned int minesSpawnRateLevel;
+unsigned int platformDifficultyLevel;
 unsigned int enemySpawnRateLevel;
 #define MAX_LEVEL_EACH 1
 #define MAX_TOTAL_LEVEL MAX_LEVEL_EACH*5
@@ -59,10 +68,11 @@ void gameInit(void){
 	nextCloudSpawnTick = 0;
 
 	frameRateLevel = 0;
-	horizontalProjectileLevel = 0;
-	verticalProjectileLevel = 0;
-	platformXAxisMovementLevel = 0;
+	bulletSpawnRateLevel = 0;
+	minesSpawnRateLevel = 0;
+	platformDifficultyLevel = 0;
 	enemySpawnRateLevel = 0;
+	messageEndTick = 0;
 
 	gameOver = false;
 
@@ -80,7 +90,7 @@ void spawnCoin(void){
 }
 
 int getTotalLevel(){
-	return frameRateLevel+horizontalProjectileLevel+verticalProjectileLevel+platformXAxisMovementLevel+enemySpawnRateLevel;
+	return frameRateLevel+bulletSpawnRateLevel+minesSpawnRateLevel+platformDifficultyLevel+enemySpawnRateLevel;
 }
 
 void increasesDifficulty(void){
@@ -89,21 +99,27 @@ void increasesDifficulty(void){
 		int type = rand()%5;
 		if(type==0 && frameRateLevel<MAX_LEVEL_EACH){
 			frameRateLevel++;
+			strcpy(message, FRAME_RATE_DIFFICULTY_INCREASE_TEXT);
 			difficultyIncreased = true;
-		}else if(type==1 && horizontalProjectileLevel<MAX_LEVEL_EACH){
-			horizontalProjectileLevel++;
+		}else if(type==1 && bulletSpawnRateLevel<MAX_LEVEL_EACH){
+			bulletSpawnRateLevel++;
+			strcpy(message, BULLETS_PROJECTILE_DIFFICULTY_INCREASE_TEXT);
 			difficultyIncreased = true;
-		}else if(type==2 && verticalProjectileLevel<MAX_LEVEL_EACH){
-			verticalProjectileLevel++;
+		}else if(type==2 && minesSpawnRateLevel<MAX_LEVEL_EACH){
+			minesSpawnRateLevel++;
+			strcpy(message, MINES_PROJECTILE_RATE_DIFFICULTY_INCREASE_TEXT);
 			difficultyIncreased = true;
-		}else if(type==3 && platformXAxisMovementLevel<MAX_LEVEL_EACH){
-			platformXAxisMovementLevel++;
+		}else if(type==3 && platformDifficultyLevel<MAX_LEVEL_EACH){
+			platformDifficultyLevel++;
+			strcpy(message, PLATFORM_DIFFICULTY_INCREASE_TEXT);
 			difficultyIncreased = true;
 		}else if(type==4 && enemySpawnRateLevel<MAX_LEVEL_EACH){
 			enemySpawnRateLevel++;
+			strcpy(message, ENEMY_RATE_DIFFICULTY_INCREASE_TEXT);
 			difficultyIncreased = true;
 		}
 	}while(!difficultyIncreased);
+	messageEndTick = systemGetTick()+MESSAGE_DURATION;
 }
 
 void handleKeyInput(void){
@@ -259,6 +275,10 @@ void renderGameObjects(void){
 		char buf[GRAPHIC_PIXEL_WIDTH/6+1];
 		sprintf(buf, GAME_OVER_TEXT, getTotalLevel(), highScore);
 		graphicDrawText(buf, 0, GAME_OVER_TEXT_X, GAME_OVER_TEXT_Y, GRAPHIC_PIXEL_WIDTH, 8, GRAPHIC_MODE_FOREGROUND_AND_NOT|GRAPHIC_MODE_BACKGROUND_OR);
+	}else{
+		if(systemGetTick()<messageEndTick){
+			graphicDrawText(message, 0, GRAPHIC_PIXEL_WIDTH-strlen(message)*6, GAME_OVER_TEXT_Y, GRAPHIC_PIXEL_WIDTH, 8, GRAPHIC_MODE_FOREGROUND_AND_NOT|GRAPHIC_MODE_BACKGROUND_OR);
+		}
 	}
 }
 

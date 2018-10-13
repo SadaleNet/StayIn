@@ -13,6 +13,8 @@
 #define GAME_SCENE_FALL_RATE 1
 #define GAME_SCENE_FALL_INTERVAL 100
 #define CHARACTER_JUMP_VELOCITY -32
+#define CLOUD_SPAWN_MIN_INTERVAL 5000
+#define CLOUD_SPAWN_MAX_INTERVAL 10000
 
 int characterX16, characterY16, characterYVel16, characterYAccel16;
 bool characterLanded;
@@ -20,9 +22,9 @@ struct GameObject *character;
 uint8_t lcdDmaBuffer[GRAPHIC_WIDTH][GRAPHIC_HEIGHT];
 
 void gameInit(void){
+	srand(systemGetTick());
 	gameObjectInit();
 	character = gameObjectNew(GAME_OBJECT_CHARACTER, GAME_CHARACTER_INITIAL_X, GAME_CHARACTER_INITIAL_Y);
-	gameObjectNew(GAME_OBJECT_CLOUD, GAME_CHARACTER_INITIAL_X-5, 64);
 
 	characterX16 = GAME_CHARACTER_INITIAL_X*16;
 	characterY16 = GAME_CHARACTER_INITIAL_Y*16;
@@ -47,11 +49,28 @@ void handleKeyInput(void){
 
 void processGameLogic(void){
 	static uint32_t previousGameFallTick;
+	static uint32_t nextCloudSpawnTick = 0;
+
+	//Spawn new cloud
+	if(systemGetTick()>=nextCloudSpawnTick){
+		gameObjectNew(GAME_OBJECT_CLOUD, rand()%(GRAPHIC_WIDTH-CLOUD_WIDTH), 64);
+		//Set the time tick to spawn the next cloud
+		nextCloudSpawnTick = systemGetTick()
+								+rand()%(CLOUD_SPAWN_MAX_INTERVAL-CLOUD_SPAWN_MIN_INTERVAL)
+								+CLOUD_SPAWN_MIN_INTERVAL;
+	}
+
+
 	//Process cloud movement
 	if(systemGetTick()-previousGameFallTick>GAME_SCENE_FALL_INTERVAL){
 		for(size_t i=0; i<GAME_OBJECT_NUM; i++){
-			if(gameObjectArray[i].type==GAME_OBJECT_CLOUD)
+			if(gameObjectArray[i].type==GAME_OBJECT_CLOUD){
+				//Move the each cloud up
 				gameObjectArray[i].y -= GAME_SCENE_FALL_RATE;
+				//If the cloud had rised to too high and disappeared from the screen, delete it.
+				if(gameObjectArray[i].y+CLOUD_HEIGHT<0)
+					gameObjectDelete(&gameObjectArray[i]);
+			}
 		}
 		previousGameFallTick = systemGetTick();
 	}

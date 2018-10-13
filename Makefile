@@ -11,7 +11,7 @@ LINKER_SCRIPT = ./misc/linkerScript.ld
 ASM_SCRIPTS = ./external/startup_stm32f030x6.s
 ASM_OBJS = $(OUTPUT_DIR)/startup_stm32f030x6.o
 DEPS = $(INCLUDE_DIR)/*
-OBJS = $(OUTPUT_DIR)/main.o
+OBJS = $(OUTPUT_DIR)/main.o $(OUTPUT_DIR)/gameObject.o
 
 
 LIBS = -lc -lrdimon -lm

@@ -15,6 +15,7 @@
 #define CHARACTER_JUMP_VELOCITY -32
 
 int characterX16, characterY16, characterYVel16, characterYAccel16;
+bool characterLanded;
 struct GameObject *character;
 uint8_t lcdDmaBuffer[GRAPHIC_WIDTH][GRAPHIC_HEIGHT];
 
@@ -26,6 +27,7 @@ void gameInit(void){
 	characterX16 = GAME_CHARACTER_INITIAL_X*16;
 	characterY16 = GAME_CHARACTER_INITIAL_Y*16;
 	characterYVel16 = 0;
+	characterLanded = false;
 }
 
 void handleKeyInput(void){
@@ -35,8 +37,12 @@ void handleKeyInput(void){
 		characterX16 -= 16;
 	if((state&KEYS_RIGHT)!=0)
 		characterX16 += 16;
-	if((state&KEYS_UP)!=0 && (justChanged&KEYS_UP)!=0)
-		characterYVel16 = CHARACTER_JUMP_VELOCITY;
+	if((state&KEYS_UP)!=0 && (justChanged&KEYS_UP)!=0){
+		if(characterLanded){
+			characterYVel16 = CHARACTER_JUMP_VELOCITY;
+			characterLanded = false;
+		}
+	}
 }
 
 void processGameLogic(void){
@@ -50,6 +56,8 @@ void processGameLogic(void){
 		previousGameFallTick = systemGetTick();
 	}
 	//Process character movement
+	if(characterYVel16>=GAME_CHARACTER_Y16_ACCEL)
+		characterLanded = false;
 	character->x = (characterX16+8)/16;
 	characterYVel16 += GAME_CHARACTER_Y16_ACCEL;
 	characterY16 += characterYVel16;
@@ -74,6 +82,7 @@ void processGameLogic(void){
 				character->y = cloud->y-CHARACTER_HEIGHT;
 				characterY16 = character->y*16;
 				characterYVel16 = 0;
+				characterLanded = true;
 			}
 		}
 	}

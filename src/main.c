@@ -14,6 +14,8 @@
 #define CHARACTER_MOVEMENT_SPEED_16 32
 #define CLOUD_SPAWN_MIN_INTERVAL_IN_FRAMES 50
 #define CLOUD_SPAWN_MAX_INTERVAL_IN_FRAMES 100
+#define MIN_HEIGHT_OF_COLLIDIBLE_OBJECT CLOUD_HEIGHT
+#define COIN_SPAWN_CHARACTER_DISTANCE 8
 
 #define GAME_OVER_TEXT "SCORE:%i HI:%i"
 #define GAME_OVER_TEXT_X 0
@@ -22,7 +24,6 @@
 
 int characterX16, characterY16, characterYVel16, characterYAccel16;
 bool characterLanded;
-int score;
 bool gameOver;
 uint32_t gameFallCounter;
 uint32_t nextCloudSpawnTick;
@@ -35,10 +36,16 @@ unsigned int frameRateLevel;
 unsigned int horizontalProjectileLevel;
 unsigned int verticalProjectileLevel;
 unsigned int platformXAxisMovementLevel;
-unsigned int verticalProjectileLevel;
+unsigned int enemySpawnRateLevel;
+#define MAX_LEVEL_EACH 1
+#define MAX_TOTAL_LEVEL MAX_LEVEL_EACH*5
 
 struct GameObject *character;
 uint8_t lcdDmaBuffer[GRAPHIC_WIDTH][GRAPHIC_HEIGHT];
+
+#define AABB(ax,ay,aw,ah,bx,by,bw,bh) (ax+aw > bx && ax < bx+bw && ay+ah > by && ay < by+bh)
+
+void spawnCoin(void);
 
 void gameInit(void){
 	srand(systemGetTick());
@@ -55,10 +62,48 @@ void gameInit(void){
 	horizontalProjectileLevel = 0;
 	verticalProjectileLevel = 0;
 	platformXAxisMovementLevel = 0;
-	verticalProjectileLevel = 0;
+	enemySpawnRateLevel = 0;
 
-	score = 0;
 	gameOver = false;
+
+}
+
+void spawnCoin(void){
+	int x, y;
+	do{ //Keep randomly picking a position until we find the one that isn't close with the character
+		x = rand()%(GRAPHIC_PIXEL_WIDTH-COIN_WIDTH);
+		y = rand()%(GRAPHIC_PIXEL_HEIGHT-COIN_HEIGHT);
+	}while(AABB(x,y,COIN_WIDTH,COIN_HEIGHT,
+		character->x-COIN_SPAWN_CHARACTER_DISTANCE, character->y-COIN_SPAWN_CHARACTER_DISTANCE,
+		CHARACTER_WIDTH+COIN_SPAWN_CHARACTER_DISTANCE*2, CHARACTER_HEIGHT+COIN_SPAWN_CHARACTER_DISTANCE*2));
+	gameObjectNew(GAME_OBJECT_COIN, x, y);
+}
+
+int getTotalLevel(){
+	return frameRateLevel+horizontalProjectileLevel+verticalProjectileLevel+platformXAxisMovementLevel+enemySpawnRateLevel;
+}
+
+void increasesDifficulty(void){
+	bool difficultyIncreased = false;
+	do{
+		int type = rand()%5;
+		if(type==0 && frameRateLevel<MAX_LEVEL_EACH){
+			frameRateLevel++;
+			difficultyIncreased = true;
+		}else if(type==1 && horizontalProjectileLevel<MAX_LEVEL_EACH){
+			horizontalProjectileLevel++;
+			difficultyIncreased = true;
+		}else if(type==2 && verticalProjectileLevel<MAX_LEVEL_EACH){
+			verticalProjectileLevel++;
+			difficultyIncreased = true;
+		}else if(type==3 && platformXAxisMovementLevel<MAX_LEVEL_EACH){
+			platformXAxisMovementLevel++;
+			difficultyIncreased = true;
+		}else if(type==4 && enemySpawnRateLevel<MAX_LEVEL_EACH){
+			enemySpawnRateLevel++;
+			difficultyIncreased = true;
+		}
+	}while(!difficultyIncreased);
 }
 
 void handleKeyInput(void){
@@ -97,6 +142,7 @@ void processGameLogic(void){
 										GAME_CHARACTER_INITIAL_Y);
 			characterX16 = character->x*16;
 			characterY16 = character->y*16;
+			spawnCoin();
 		}
 	}
 
@@ -120,32 +166,48 @@ void processGameLogic(void){
 		characterLanded = false;
 	character->x = (characterX16+8)/16;
 	characterYVel16 += GAME_CHARACTER_Y16_ACCEL;
-	if(characterYVel16>(CLOUD_HEIGHT-1)*16) //Limits the max fall velocity to avoid breaking collision detection
-		characterYVel16 = (CLOUD_HEIGHT-1)*16;
+	if(characterYVel16>(MIN_HEIGHT_OF_COLLIDIBLE_OBJECT-1)*16) //Limits the max fall velocity to avoid breaking collision detection
+		characterYVel16 = (MIN_HEIGHT_OF_COLLIDIBLE_OBJECT-1)*16;
 	characterY16 += characterYVel16;
 	character->y = (characterY16+8)/16;
 	
 	for(size_t i=0; i<GAME_OBJECT_NUM; i++){
-		if(gameObjectArray[i].type==GAME_OBJECT_CLOUD){
-			struct GameObject *cloud = &gameObjectArray[i];
-			/* This is a modified AABB algorithm.
-			 * The X-axis collision detection is same as AABB algorithm
-			 * However, for a Y-axis, it's designed in a way that the collision is
-			 * detected only if the bottom of the character (character->y+CHARACTER_HEIGHT) is
-			 * higher than the bottom of the cloud (cloud->y+CLOUD_HEIGHT).
-			 *
-			 * Reasoning: If the feet of the character is higher than the bottom of the cloud,
-			 * the character would climb the cloud and reaches its top.
-			 * However, if its feet is below the bottom of the cloud, there's no way that he
-			 * could get to the top of the cloud. Hence the fall and there's no "collision" detected.
-			 */
-			if(character->x+CHARACTER_WIDTH > cloud->x && character->x < cloud->x+CLOUD_WIDTH &&
-				character->y+CHARACTER_HEIGHT > cloud->y && character->y+CHARACTER_HEIGHT < cloud->y+CLOUD_HEIGHT){
-				character->y = cloud->y-CHARACTER_HEIGHT;
-				characterY16 = character->y*16;
-				characterYVel16 = 0;
-				characterLanded = true;
+		switch(gameObjectArray[i].type){
+			case GAME_OBJECT_CLOUD:
+			{
+				struct GameObject *cloud = &gameObjectArray[i];
+				/* This is a modified AABB algorithm.
+				 * The X-axis collision detection is same as AABB algorithm
+				 * However, for a Y-axis, it's designed in a way that the collision is
+				 * detected only if the bottom of the character (character->y+CHARACTER_HEIGHT) is
+				 * higher than the bottom of the cloud (cloud->y+CLOUD_HEIGHT).
+				 *
+				 * Reasoning: If the feet of the character is higher than the bottom of the cloud,
+				 * the character would climb the cloud and reaches its top.
+				 * However, if its feet is below the bottom of the cloud, there's no way that he
+				 * could get to the top of the cloud. Hence the fall and there's no "collision" detected.
+				 */
+				if(character->x+CHARACTER_WIDTH > cloud->x && character->x < cloud->x+CLOUD_WIDTH &&
+					character->y+CHARACTER_HEIGHT > cloud->y && character->y+CHARACTER_HEIGHT < cloud->y+CLOUD_HEIGHT){
+					character->y = cloud->y-CHARACTER_HEIGHT;
+					characterY16 = character->y*16;
+					characterYVel16 = 0;
+					characterLanded = true;
+				}
 			}
+			break;
+			case GAME_OBJECT_COIN:
+				if(AABB(character->x, character->y, CHARACTER_WIDTH, CHARACTER_HEIGHT,
+				gameObjectArray[i].x, gameObjectArray[i].y, COIN_WIDTH, COIN_HEIGHT)){
+					gameObjectDelete(&gameObjectArray[i]);
+					increasesDifficulty();
+					if(getTotalLevel()<MAX_TOTAL_LEVEL){
+						spawnCoin();
+					}
+				}
+			break;
+			default:
+			break;
 		}
 	}
 
@@ -177,6 +239,16 @@ void renderGameObjects(void){
 				graphicDrawImage(&graphicImage, gameObjectArray[i].x, gameObjectArray[i].y, GRAPHIC_MODE_FOREGROUND_OR);
 			}
 			break;
+			case GAME_OBJECT_COIN:
+			{
+				struct GraphicImage graphicImage = {
+					.image = GRAPHIC_SHAPE_RECTANGLE,
+					.width = COIN_WIDTH,
+					.height = COIN_HEIGHT,
+				};
+				graphicDrawImage(&graphicImage, gameObjectArray[i].x, gameObjectArray[i].y, GRAPHIC_MODE_FOREGROUND_OR);
+			}
+			break;
 			default:
 			break;
 		}
@@ -185,7 +257,7 @@ void renderGameObjects(void){
 		int highScore = 0; //TODO: load highScore from the saved data
 
 		char buf[GRAPHIC_PIXEL_WIDTH/6+1];
-		sprintf(buf, GAME_OVER_TEXT, score, highScore);
+		sprintf(buf, GAME_OVER_TEXT, getTotalLevel(), highScore);
 		graphicDrawText(buf, 0, GAME_OVER_TEXT_X, GAME_OVER_TEXT_Y, GRAPHIC_PIXEL_WIDTH, 8, GRAPHIC_MODE_FOREGROUND_AND_NOT|GRAPHIC_MODE_BACKGROUND_OR);
 	}
 }

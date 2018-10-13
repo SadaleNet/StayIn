@@ -9,6 +9,8 @@
 #define BULLET_HEIGHT (7)
 #define MINE_WIDTH (5)
 #define MINE_HEIGHT (5)
+#define LASER_WIDTH (5)
+#define LASER_HEIGHT (1)
 
 enum GameObjectType{
 	NO_OBJECT,
@@ -16,9 +18,10 @@ enum GameObjectType{
 	GAME_OBJECT_CLOUD,
 	GAME_OBJECT_CONVEYOR,
 	GAME_OBJECT_COIN,
-	GAME_OBJECT_BULLET,
+	GAME_OBJECT_BULLET, //Hostile projectile
 	GAME_OBJECT_MINE,
 	GAME_OBJECT_ENEMY,
+	GAME_OBJECT_LASER, //The projectile shot by the player
 };
 
 struct __attribute__((packed)) GameObject{

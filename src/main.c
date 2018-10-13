@@ -35,9 +35,11 @@
 #define MINE_MAX_SPEED 5
 #define CONVEYOR_MIN_SPEED 10
 #define CONVEYOR_MAX_SPEED 30
+#define LASER_SPEED 3
+#define LASER_Y_OFFSET 3
 
 int characterX16, characterX16ConveyorVel, characterY16, characterYVel16, characterYAccel16;
-bool characterLanded;
+bool characterLanded, characterFacingRight;
 bool gameOver;
 uint32_t gameFallCounter;
 uint32_t nextCloudSpawnTick;
@@ -62,6 +64,7 @@ unsigned int enemySpawnRateLevel;
 #define MAX_TOTAL_LEVEL MAX_LEVEL_EACH*5
 
 struct GameObject *character;
+struct GameObject *laser;
 uint8_t lcdDmaBuffer[GRAPHIC_WIDTH][GRAPHIC_HEIGHT];
 
 #define AABB(ax,ay,aw,ah,bx,by,bw,bh) (ax+aw > bx && ax < bx+bw && ay+ah > by && ay < by+bh)
@@ -72,10 +75,12 @@ void gameInit(void){
 	srand(systemGetTick());
 	gameObjectInit();
 	character = NULL;
+	laser = NULL;
 
 	characterX16ConveyorVel = 0;
 	characterYVel16 = 0;
 	characterLanded = false;
+	characterFacingRight = true;
 
 	gameFallCounter = 0;
 	nextCloudSpawnTick = 0;
@@ -134,6 +139,18 @@ void spawnMine(void){
 							+MINE_SPAWN_RATE_TABLE[mineSpawnRateLevel]/2)*FRAME_RATE_TABLE[frameRateLevel];
 }
 
+void spawnLaser(void){
+	if(laser == NULL){
+		if(characterFacingRight){
+			laser = gameObjectNew(GAME_OBJECT_LASER, character->x+CHARACTER_WIDTH-LASER_WIDTH, character->y+LASER_Y_OFFSET);
+			laser->extra = LASER_SPEED;
+		}else{
+			laser = gameObjectNew(GAME_OBJECT_LASER, character->x+LASER_WIDTH, character->y+LASER_Y_OFFSET);
+			laser->extra = -LASER_SPEED;
+		}
+	}
+}
+
 int getTotalLevel(){
 	return frameRateLevel+bulletSpawnRateLevel+mineSpawnRateLevel+platformDifficultyLevel+enemySpawnRateLevel;
 }
@@ -183,6 +200,14 @@ void handleKeyInput(void){
 				characterLanded = false;
 			}
 		}
+		if((state&KEYS_1)!=0 && (justChanged&KEYS_1)!=0)
+			spawnLaser();
+
+		//Check which side the character is facing
+		if((state&KEYS_RIGHT)!=0 && (state&KEYS_LEFT)==0)
+			characterFacingRight = true;
+		else if((state&KEYS_LEFT)!=0 && (state&KEYS_RIGHT)==0)
+			characterFacingRight = false;
 	}else{
 		//Button to restart the game
 		if((state&KEYS_2)!=0 && (justChanged&KEYS_2)!=0)
@@ -229,8 +254,8 @@ void processGameLogic(void){
 		gameFallCounter = 0;
 
 	for(size_t i=0; i<GAME_OBJECT_NUM; i++){
-		//Process cloud movement
 		switch(gameObjectArray[i].type){
+			//Process cloud movement
 			case GAME_OBJECT_CLOUD:
 				if(gameFallCounter == 0){
 					//Move the each cloud up
@@ -241,16 +266,25 @@ void processGameLogic(void){
 					gameFallCounter = 0;
 				}
 			break;
+			//Process bullet movement
 			case GAME_OBJECT_BULLET:
 				gameObjectArray[i].x += gameObjectArray[i].extra;
 				if(gameObjectArray[i].x+BULLET_WIDTH<0 || gameObjectArray[i].x >= GRAPHIC_PIXEL_WIDTH)
 					gameObjectDelete(&gameObjectArray[i]);
 			break;
+			//Process mine movement
 			case GAME_OBJECT_MINE:
 				gameObjectArray[i].y -= gameObjectArray[i].extra;
 				if(gameObjectArray[i].y+MINE_HEIGHT<0)
 					gameObjectDelete(&gameObjectArray[i]);
 			break;
+			//Process laser movement
+			case GAME_OBJECT_LASER:
+				gameObjectArray[i].x += gameObjectArray[i].extra;
+				if(gameObjectArray[i].x+LASER_WIDTH<0 || gameObjectArray[i].x >= GRAPHIC_PIXEL_WIDTH){
+					gameObjectDelete(&gameObjectArray[i]);
+					laser = NULL;
+				}
 			default:
 			break;
 		}
@@ -387,6 +421,16 @@ void renderGameObjects(void){
 					.height = MINE_HEIGHT,
 				};
 				graphicDrawImage(&graphicImage, gameObjectArray[i].x, gameObjectArray[i].y, GRAPHIC_MODE_FOREGROUND_OR);
+			}
+			break;
+			case GAME_OBJECT_LASER:
+			{
+				struct GraphicImage graphicImage = {
+					.image = GRAPHIC_SHAPE_RECTANGLE,
+					.width = LASER_WIDTH,
+					.height = LASER_HEIGHT,
+				};
+				graphicDrawImage(&graphicImage, gameObjectArray[i].x, gameObjectArray[i].y, GRAPHIC_MODE_BACKGROUND_OR);
 			}
 			break;
 			default:

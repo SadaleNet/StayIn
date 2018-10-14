@@ -51,6 +51,7 @@
 int characterX16, characterX16ConveyorVel, characterY16, characterYVel16, characterYAccel16;
 bool characterLanded, characterFacingRight;
 bool gameOver;
+int score;
 uint32_t gameFallCounter;
 uint32_t gameEnemyMovementCounter;
 uint32_t bulletMovementCounter;
@@ -260,6 +261,7 @@ void gameInit(void){
 	characterLanded = false;
 	characterFacingRight = true;
 
+	score = 0;
 	gameFallCounter = 0;
 	gameEnemyMovementCounter = 0;
 	bulletMovementCounter = 0;
@@ -356,6 +358,7 @@ int getTotalLevel(){
 }
 
 void increasesDifficulty(void){
+	score++;
 	if(getTotalLevel()>=MAX_TOTAL_LEVEL){
 		strcpy(message, NO_MORE_DIFFICULTY_INCREASE_TEXT);
 		messageEndTick = systemGetTick()+MESSAGE_DURATION;
@@ -691,7 +694,6 @@ void renderGameObjects(void){
 		}
 	}
 	if(gameOver){
-		int score = getTotalLevel();
 		int highScore = 0;
 		uint8_t magicNumber = 0;
 

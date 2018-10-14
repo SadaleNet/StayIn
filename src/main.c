@@ -152,6 +152,16 @@ const struct SynthData enemySound = {
 	.dutySweepPeriod = 0,
 	.controlFlags = SYNTH_FREQ_SWEEP_SAW|SYNTH_FREQ_SWEEP_REPEAT_ENABLE|SYNTH_FREQ_SWEEP_MULTIPLER_256,
 };
+const struct SynthData enemyDeathSound = {
+	.durationRemaining = 20,
+	.initialFreq = 100,
+	.finalFreq = 50,
+	.freqSweepPeriod = 0,
+	.initialDutyCycle = 1,
+	.finalDutyCycle = 1,
+	.dutySweepPeriod = 0,
+	.controlFlags = SYNTH_FREQ_SWEEP_SAW|SYNTH_FREQ_SWEEP_REPEAT_ENABLE|SYNTH_FREQ_SWEEP_MULTIPLER_256,
+};
 const struct SynthData laserSound = {
 	.durationRemaining = 10,
 	.initialFreq = 140,
@@ -543,6 +553,7 @@ void processGameLogic(void){
 				gameObjectArray[i].x, gameObjectArray[i].y, ENEMY_WIDTH, ENEMY_HEIGHT)){
 					gameObjectDelete(&gameObjectArray[i]);
 					gameObjectDelete(laser);
+					synthPlayOne(true, &enemyDeathSound);
 					laser = NULL;
 				}
 			break;

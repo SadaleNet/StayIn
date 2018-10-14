@@ -22,6 +22,7 @@
 #define GAME_OVER_TEXT_X 0
 #define GAME_OVER_TEXT_Y GRAPHIC_PIXEL_HEIGHT-8
 
+#define NO_MORE_DIFFICULTY_INCREASE_TEXT "DIFFICULTY MAXED"
 #define FRAME_RATE_DIFFICULTY_INCREASE_TEXT "GAME SPEED UP"
 #define BULLETS_PROJECTILE_DIFFICULTY_INCREASE_TEXT "MORE BULLETS"
 #define MINES_PROJECTILE_RATE_DIFFICULTY_INCREASE_TEXT "MORE MINES"
@@ -355,6 +356,11 @@ int getTotalLevel(){
 }
 
 void increasesDifficulty(void){
+	if(getTotalLevel()>=MAX_TOTAL_LEVEL){
+		strcpy(message, NO_MORE_DIFFICULTY_INCREASE_TEXT);
+		messageEndTick = systemGetTick()+MESSAGE_DURATION;
+		return;
+	}
 	bool difficultyIncreased = false;
 	do{
 		int type = rand()%5;
@@ -586,9 +592,7 @@ void processGameLogic(void){
 					gameObjectDelete(&gameObjectArray[i]);
 					synthPlayOne(false, &coinSound);
 					increasesDifficulty();
-					if(getTotalLevel()<MAX_TOTAL_LEVEL){
-						spawnCoin();
-					}
+					spawnCoin();
 				}
 			break;
 			case GAME_OBJECT_BULLET:

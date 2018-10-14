@@ -447,6 +447,7 @@ void processGameLogic(void){
 			characterX16 = character->x*16;
 			characterY16 = character->y*16;
 			spawnCoin();
+			spawnCoin();
 		}
 	}
 	

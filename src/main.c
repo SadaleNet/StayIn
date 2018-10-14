@@ -284,19 +284,19 @@ void gameInit(void){
 
 }
 
-void caucluateNextBulletSpawnTick(void){
+void calculateNextBulletSpawnTick(void){
 	nextBulletSpawnTick = systemGetTick()
 							+(rand()%(BULLET_SPAWN_RATE_TABLE[bulletSpawnRateLevel]/2)
 							+BULLET_SPAWN_RATE_TABLE[bulletSpawnRateLevel]/2)*FRAME_RATE_TABLE[frameRateLevel];
 }
 
-void caucluateNextMineSpawnTick(void){
+void calculateNextMineSpawnTick(void){
 	nextMineSpawnTick = systemGetTick()
 							+(rand()%(MINE_SPAWN_RATE_TABLE[mineSpawnRateLevel]/2)
 							+MINE_SPAWN_RATE_TABLE[mineSpawnRateLevel]/2)*FRAME_RATE_TABLE[frameRateLevel];
 }
 
-void caucluateNextEnemySpawnTick(void){
+void calculateNextEnemySpawnTick(void){
 	nextEnemySpawnTick = systemGetTick()
 							+(rand()%(ENEMY_SPAWN_RATE_TABLE[enemySpawnRateLevel]/2)
 							+ENEMY_SPAWN_RATE_TABLE[enemySpawnRateLevel]/2)*FRAME_RATE_TABLE[frameRateLevel];
@@ -325,7 +325,7 @@ void spawnBullet(void){
 	else
 		bullet = gameObjectNew(GAME_OBJECT_BULLET, -BULLET_WIDTH, y);
 	bullet->extra = speed;
-	caucluateNextBulletSpawnTick();
+	calculateNextBulletSpawnTick();
 	synthPlayOne(true, &bulletSound);
 }
 
@@ -335,7 +335,7 @@ void spawnMine(void){
 	struct GameObject *mine;
 	mine = gameObjectNew(GAME_OBJECT_MINE, x, GRAPHIC_PIXEL_HEIGHT);
 	mine->extra = speed;
-	caucluateNextMineSpawnTick();
+	calculateNextMineSpawnTick();
 	synthPlayOne(true, &mineSound);
 }
 
@@ -344,7 +344,7 @@ void spawnEnemy(void){
 		gameObjectNew(GAME_OBJECT_ENEMY, GRAPHIC_PIXEL_WIDTH-1, 0); //The y will be calaculated every frame
 	else
 		gameObjectNew(GAME_OBJECT_ENEMY, -ENEMY_WIDTH, 0); //The y will be calaculated every frame
-	caucluateNextEnemySpawnTick();
+	calculateNextEnemySpawnTick();
 	synthPlayOne(true, &enemySound);
 }
 
@@ -381,12 +381,12 @@ void increasesDifficulty(void){
 			difficultyIncreased = true;
 		}else if(type==1 && bulletSpawnRateLevel<MAX_LEVEL_EACH){
 			bulletSpawnRateLevel++;
-			caucluateNextBulletSpawnTick();
+			calculateNextBulletSpawnTick();
 			strcpy(message, BULLETS_PROJECTILE_DIFFICULTY_INCREASE_TEXT);
 			difficultyIncreased = true;
 		}else if(type==2 && mineSpawnRateLevel<MAX_LEVEL_EACH){
 			mineSpawnRateLevel++;
-			caucluateNextMineSpawnTick();
+			calculateNextMineSpawnTick();
 			strcpy(message, MINES_PROJECTILE_RATE_DIFFICULTY_INCREASE_TEXT);
 			difficultyIncreased = true;
 		}else if(type==3 && platformDifficultyLevel<MAX_LEVEL_EACH){
@@ -395,7 +395,7 @@ void increasesDifficulty(void){
 			difficultyIncreased = true;
 		}else if(type==4 && enemySpawnRateLevel<MAX_LEVEL_EACH){
 			enemySpawnRateLevel++;
-			caucluateNextEnemySpawnTick();
+			calculateNextEnemySpawnTick();
 			strcpy(message, ENEMY_RATE_DIFFICULTY_INCREASE_TEXT);
 			difficultyIncreased = true;
 		}

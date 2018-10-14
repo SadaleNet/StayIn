@@ -457,7 +457,7 @@ void processGameLogic(void){
 	//Spawn new cloud
 	if(systemGetTick()>=nextCloudSpawnTick){
 		int cloudX = rand()%(GRAPHIC_PIXEL_WIDTH-CLOUD_WIDTH);
-		struct GameObject *cloud = gameObjectNew(GAME_OBJECT_CLOUD, cloudX, 64);
+		struct GameObject *cloud = gameObjectNew(GAME_OBJECT_CLOUD, cloudX, GRAPHIC_PIXEL_HEIGHT);
 		//Set the time tick to spawn the next cloud
 		nextCloudSpawnTick = systemGetTick()
 								+(rand()%(CLOUD_SPAWN_MAX_INTERVAL_IN_FRAMES-CLOUD_SPAWN_MIN_INTERVAL_IN_FRAMES)

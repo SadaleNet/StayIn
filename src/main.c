@@ -448,9 +448,8 @@ void processGameLogic(void){
 			//Process enemy movement
 			case GAME_OBJECT_ENEMY:
 			{
-				int diff = (gameObjectArray[i].x+ENEMY_WIDTH/2)-(character->x+CHARACTER_WIDTH/2);
 				if(gameEnemyMovementCounter==0){
-					if(diff < 0){ //Enemy on the left
+					if((gameObjectArray[i].x+ENEMY_WIDTH/2)<(character->x+CHARACTER_WIDTH/2)){ //Enemy on the left
 						gameObjectArray[i].x += ENEMY_SPEED;
 						gameObjectArray[i].extra = true;
 					}else{ //Enemy on the right
@@ -458,10 +457,7 @@ void processGameLogic(void){
 						gameObjectArray[i].extra = false;
 					}
 				}
-				if(abs(diff)>CHARACTER_WIDTH)
-					gameObjectArray[i].y = character->y-ENEMY_HEIGHT;
-				else
-					gameObjectArray[i].y = character->y-ENEMY_HEIGHT+(CHARACTER_WIDTH-abs(diff));
+				gameObjectArray[i].y = character->y-ENEMY_HEIGHT+LASER_Y_OFFSET-1;
 			}
 			break;
 			//Process laser movement

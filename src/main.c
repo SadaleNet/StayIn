@@ -48,6 +48,8 @@ bool characterLanded, characterFacingRight;
 bool gameOver;
 uint32_t gameFallCounter;
 uint32_t gameEnemyMovementCounter;
+uint32_t eightFramesImageCounter;
+uint32_t twoFramesImageCounter;
 uint32_t nextCloudSpawnTick;
 uint32_t nextBulletSpawnTick;
 uint32_t nextMineSpawnTick;
@@ -73,11 +75,77 @@ unsigned int enemySpawnRateLevel;
 
 struct GameObject *character;
 struct GameObject *laser;
+
+#define CHARACTER_GRAPHIC_RESOURCE 1
+#define CLOUD_GRAPHIC_RESOURCE 2
+#define COIN_GRAPHIC_RESOURCE 3
+#define BULLET_GRAPHIC_RESOURCE 4
+#define MINE_GRAPHIC_RESOURCE 5
+#define ENEMY_GRAPHIC_RESOURCE 6
+
+#define CHARACTER_GRAPHIC_BUFFER_SIZE 9
+#define CLOUD_OR_CONVERYOR_GRAPHIC_BUFFER_SIZE 34
+#define COIN_GRAPHIC_BUFFER_SIZE 10
+#define BULLET_GRAPHIC_BUFFER_SIZE 12
+#define MINE_GRAPHIC_BUFFER_SIZE 7
+#define ENEMY_GRAPHIC_BUFFER_SIZE 26
+
+struct GraphicImage characterImageL[2];
+struct GraphicImage characterImageR[2];
+struct GraphicImage cloudImage;
+struct GraphicImage conveyorImageL;
+struct GraphicImage conveyorImageR;
+struct GraphicImage coinImage[8];
+struct GraphicImage bulletImageL;
+struct GraphicImage bulletImageR;
+struct GraphicImage mineImage[2];
+struct GraphicImage enemyImage[2];
+
+uint8_t characterGraphicBuffer[CHARACTER_GRAPHIC_BUFFER_SIZE*4];
+uint8_t cloudAndConveyorGraphicBuffer[CLOUD_OR_CONVERYOR_GRAPHIC_BUFFER_SIZE*3];
+uint8_t coinGraphicBuffer[COIN_GRAPHIC_BUFFER_SIZE*8];
+uint8_t bulletGraphicBuffer[BULLET_GRAPHIC_BUFFER_SIZE*2];
+uint8_t mineGraphicBuffer[MINE_GRAPHIC_BUFFER_SIZE*2];
+uint8_t enemyGraphicBuffer[ENEMY_GRAPHIC_BUFFER_SIZE*2];
+
 uint8_t lcdDmaBuffer[GRAPHIC_WIDTH][GRAPHIC_HEIGHT];
 
 #define AABB(ax,ay,aw,ah,bx,by,bw,bh) (ax+aw > bx && ax < bx+bw && ay+ah > by && ay < by+bh)
 
-void spawnCoin(void);
+void loadGraphic(void){
+	//Let's assume that the graphic will be loaded successfully. That'd make our code much simpler
+
+	//Load image data from SD card to buffer
+	storageRead(CHARACTER_GRAPHIC_RESOURCE, 0, characterGraphicBuffer, sizeof(characterGraphicBuffer));
+	storageRead(CLOUD_GRAPHIC_RESOURCE, 0, cloudAndConveyorGraphicBuffer, sizeof(cloudAndConveyorGraphicBuffer));
+	storageRead(COIN_GRAPHIC_RESOURCE, 0, coinGraphicBuffer, sizeof(coinGraphicBuffer));
+	storageRead(BULLET_GRAPHIC_RESOURCE, 0, bulletGraphicBuffer, sizeof(bulletGraphicBuffer));
+	storageRead(MINE_GRAPHIC_RESOURCE, 0, mineGraphicBuffer, sizeof(mineGraphicBuffer));
+	storageRead(ENEMY_GRAPHIC_RESOURCE, 0, enemyGraphicBuffer, sizeof(enemyGraphicBuffer));
+
+	//Construct struct GraphicImage based on the data loaded into the buffer
+	graphicLoadImage(&characterGraphicBuffer[CHARACTER_GRAPHIC_BUFFER_SIZE*0], &characterImageL[0]);
+	graphicLoadImage(&characterGraphicBuffer[CHARACTER_GRAPHIC_BUFFER_SIZE*1], &characterImageL[1]);
+	graphicLoadImage(&characterGraphicBuffer[CHARACTER_GRAPHIC_BUFFER_SIZE*2], &characterImageR[0]);
+	graphicLoadImage(&characterGraphicBuffer[CHARACTER_GRAPHIC_BUFFER_SIZE*3], &characterImageR[1]);
+
+	graphicLoadImage(&cloudAndConveyorGraphicBuffer[CLOUD_OR_CONVERYOR_GRAPHIC_BUFFER_SIZE*0], &cloudImage);
+	graphicLoadImage(&cloudAndConveyorGraphicBuffer[CLOUD_OR_CONVERYOR_GRAPHIC_BUFFER_SIZE*1], &conveyorImageL);
+	graphicLoadImage(&cloudAndConveyorGraphicBuffer[CLOUD_OR_CONVERYOR_GRAPHIC_BUFFER_SIZE*2], &conveyorImageR);
+
+	for(size_t i=0; i<8; i++)
+		graphicLoadImage(&coinGraphicBuffer[COIN_GRAPHIC_BUFFER_SIZE*i], &coinImage[i]);
+
+	graphicLoadImage(&bulletGraphicBuffer[BULLET_GRAPHIC_BUFFER_SIZE*0], &bulletImageL);
+	graphicLoadImage(&bulletGraphicBuffer[BULLET_GRAPHIC_BUFFER_SIZE*1], &bulletImageR);
+
+	graphicLoadImage(&mineGraphicBuffer[MINE_GRAPHIC_BUFFER_SIZE*0], &mineImage[0]);
+	graphicLoadImage(&mineGraphicBuffer[MINE_GRAPHIC_BUFFER_SIZE*1], &mineImage[1]);
+
+	graphicLoadImage(&enemyGraphicBuffer[ENEMY_GRAPHIC_BUFFER_SIZE*0], &enemyImage[0]);
+	graphicLoadImage(&enemyGraphicBuffer[ENEMY_GRAPHIC_BUFFER_SIZE*1], &enemyImage[1]);
+}
+
 
 void gameInit(void){
 	srand(systemGetTick());
@@ -92,6 +160,8 @@ void gameInit(void){
 
 	gameFallCounter = 0;
 	gameEnemyMovementCounter = 0;
+	eightFramesImageCounter = 0;
+	twoFramesImageCounter = 0;
 	nextCloudSpawnTick = 0;
 	nextBulletSpawnTick = UINT32_MAX;
 	nextMineSpawnTick = UINT32_MAX;
@@ -429,73 +499,48 @@ void processGameLogic(void){
 }
 
 void renderGameObjects(void){
+	eightFramesImageCounter++;
+	twoFramesImageCounter++;
+	if(eightFramesImageCounter>=8)
+		eightFramesImageCounter = 0;
+	if(twoFramesImageCounter>=2)
+		twoFramesImageCounter = 0;
 	for(size_t i=0; i<GAME_OBJECT_NUM; i++){
 		switch(gameObjectArray[i].type){
 			case GAME_OBJECT_CHARACTER:
-			{
-				struct GraphicImage graphicImage = {
-					.image = GRAPHIC_SHAPE_RECTANGLE,
-					.width = CHARACTER_WIDTH,
-					.height = CHARACTER_HEIGHT,
-				};
-				graphicDrawImage(&graphicImage, gameObjectArray[i].x, gameObjectArray[i].y, GRAPHIC_MODE_BACKGROUND_OR);
-			}
+				if(characterFacingRight)
+					graphicDrawImage(&characterImageR[twoFramesImageCounter],
+										gameObjectArray[i].x, gameObjectArray[i].y, GRAPHIC_MODE_FOREGROUND_OR);
+				else
+					graphicDrawImage(&characterImageL[twoFramesImageCounter],
+										gameObjectArray[i].x, gameObjectArray[i].y, GRAPHIC_MODE_FOREGROUND_OR);
 			break;
 			case GAME_OBJECT_CLOUD:
-			{
-				struct GraphicImage graphicImage = {
-					.width = CLOUD_WIDTH,
-					.height = CLOUD_HEIGHT,
-				};
 				if(gameObjectArray[i].extra>0){ // >>>>>> right conveyor
-					graphicImage.image = GRAPHIC_SHAPE_RECTANGLE;
+					graphicDrawImage(&conveyorImageR, gameObjectArray[i].x, gameObjectArray[i].y, GRAPHIC_MODE_FOREGROUND_OR);
 				}else if(gameObjectArray[i].extra<0){ // <<<<<< left conveyor
-					graphicImage.image = GRAPHIC_SHAPE_RECTANGLE;
+					graphicDrawImage(&conveyorImageL, gameObjectArray[i].x, gameObjectArray[i].y, GRAPHIC_MODE_FOREGROUND_OR);
 				}else{ //stationary cloud
-					graphicImage.image = GRAPHIC_SHAPE_RECTANGLE;
+					graphicDrawImage(&cloudImage, gameObjectArray[i].x, gameObjectArray[i].y, GRAPHIC_MODE_FOREGROUND_OR);
 				}
-				graphicDrawImage(&graphicImage, gameObjectArray[i].x, gameObjectArray[i].y, GRAPHIC_MODE_FOREGROUND_OR);
-			}
 			break;
 			case GAME_OBJECT_COIN:
-			{
-				struct GraphicImage graphicImage = {
-					.image = GRAPHIC_SHAPE_RECTANGLE,
-					.width = COIN_WIDTH,
-					.height = COIN_HEIGHT,
-				};
-				graphicDrawImage(&graphicImage, gameObjectArray[i].x, gameObjectArray[i].y, GRAPHIC_MODE_FOREGROUND_OR);
-			}
+				graphicDrawImage(&coinImage[eightFramesImageCounter],
+									gameObjectArray[i].x, gameObjectArray[i].y, GRAPHIC_MODE_FOREGROUND_OR);
 			break;
 			case GAME_OBJECT_BULLET:
-			{
-				struct GraphicImage graphicImage = {
-					.image = GRAPHIC_SHAPE_RECTANGLE,
-					.width = BULLET_WIDTH,
-					.height = BULLET_HEIGHT,
-				};
-				graphicDrawImage(&graphicImage, gameObjectArray[i].x, gameObjectArray[i].y, GRAPHIC_MODE_FOREGROUND_OR);
-			}
+				if(gameObjectArray[i].extra>0)
+					graphicDrawImage(&bulletImageR, gameObjectArray[i].x, gameObjectArray[i].y, GRAPHIC_MODE_FOREGROUND_OR);
+				else
+					graphicDrawImage(&bulletImageL, gameObjectArray[i].x, gameObjectArray[i].y, GRAPHIC_MODE_FOREGROUND_OR);
 			break;
 			case GAME_OBJECT_MINE:
-			{
-				struct GraphicImage graphicImage = {
-					.image = GRAPHIC_SHAPE_RECTANGLE,
-					.width = MINE_WIDTH,
-					.height = MINE_HEIGHT,
-				};
-				graphicDrawImage(&graphicImage, gameObjectArray[i].x, gameObjectArray[i].y, GRAPHIC_MODE_FOREGROUND_OR);
-			}
+				graphicDrawImage(&mineImage[twoFramesImageCounter],
+									gameObjectArray[i].x, gameObjectArray[i].y, GRAPHIC_MODE_FOREGROUND_OR);
 			break;
 			case GAME_OBJECT_ENEMY:
-			{
-				struct GraphicImage graphicImage = {
-					.image = GRAPHIC_SHAPE_RECTANGLE,
-					.width = ENEMY_WIDTH,
-					.height = ENEMY_HEIGHT,
-				};
-				graphicDrawImage(&graphicImage, gameObjectArray[i].x, gameObjectArray[i].y, GRAPHIC_MODE_BACKGROUND_OR);
-			}
+				graphicDrawImage(&enemyImage[twoFramesImageCounter],
+									gameObjectArray[i].x, gameObjectArray[i].y, GRAPHIC_MODE_FOREGROUND_OR);
 			break;
 			case GAME_OBJECT_LASER:
 			{
@@ -544,6 +589,9 @@ void renderGameObjects(void){
 }
 
 int main(void){
+	//Game initialization
+	loadGraphic();
+
 	//Game Objects Initialization
 	gameInit();
 

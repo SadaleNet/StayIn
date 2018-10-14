@@ -285,21 +285,27 @@ void gameInit(void){
 }
 
 void calculateNextBulletSpawnTick(void){
-	nextBulletSpawnTick = systemGetTick()
+	uint32_t next = systemGetTick()
 							+(rand()%(BULLET_SPAWN_RATE_TABLE[bulletSpawnRateLevel]/2)
 							+BULLET_SPAWN_RATE_TABLE[bulletSpawnRateLevel]/2)*FRAME_RATE_TABLE[frameRateLevel];
+	if(systemGetTick()>=nextBulletSpawnTick || next<nextBulletSpawnTick)
+		nextBulletSpawnTick = next;
 }
 
 void calculateNextMineSpawnTick(void){
-	nextMineSpawnTick = systemGetTick()
+	uint32_t next = systemGetTick()
 							+(rand()%(MINE_SPAWN_RATE_TABLE[mineSpawnRateLevel]/2)
 							+MINE_SPAWN_RATE_TABLE[mineSpawnRateLevel]/2)*FRAME_RATE_TABLE[frameRateLevel];
+	if(systemGetTick()>=nextMineSpawnTick || next<nextMineSpawnTick)
+		nextMineSpawnTick = next;
 }
 
 void calculateNextEnemySpawnTick(void){
-	nextEnemySpawnTick = systemGetTick()
+	uint32_t next = systemGetTick()
 							+(rand()%(ENEMY_SPAWN_RATE_TABLE[enemySpawnRateLevel]/2)
 							+ENEMY_SPAWN_RATE_TABLE[enemySpawnRateLevel]/2)*FRAME_RATE_TABLE[frameRateLevel];
+	if(systemGetTick()>=nextEnemySpawnTick || next<nextEnemySpawnTick)
+		nextEnemySpawnTick = next;
 }
 
 void spawnCoin(void){

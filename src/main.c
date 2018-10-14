@@ -76,6 +76,7 @@ unsigned int enemySpawnRateLevel;
 struct GameObject *character;
 struct GameObject *laser;
 
+//Graphic
 #define CHARACTER_GRAPHIC_RESOURCE 1
 #define CLOUD_GRAPHIC_RESOURCE 2
 #define COIN_GRAPHIC_RESOURCE 3
@@ -109,6 +110,58 @@ uint8_t mineGraphicBuffer[MINE_GRAPHIC_BUFFER_SIZE*2];
 uint8_t enemyGraphicBuffer[ENEMY_GRAPHIC_BUFFER_SIZE*2];
 
 uint8_t lcdDmaBuffer[GRAPHIC_WIDTH][GRAPHIC_HEIGHT];
+
+//Music and sound
+const struct SynthData coinSound = {
+	.durationRemaining = 15,
+	.initialFreq = 160,
+	.finalFreq = 170,
+	.freqSweepPeriod = 5,
+	.initialDutyCycle = 1,
+	.finalDutyCycle = 1,
+	.dutySweepPeriod = 0,
+	.controlFlags = SYNTH_FREQ_SWEEP_BIPOLAR,
+};
+const struct SynthData bulletSound = {
+	.durationRemaining = 15,
+	.initialFreq = 100,
+	.finalFreq = 60,
+	.freqSweepPeriod = 10,
+	.initialDutyCycle = 1,
+	.finalDutyCycle = 1,
+	.dutySweepPeriod = 0,
+	.controlFlags = SYNTH_FREQ_SWEEP_BIPOLAR,
+};
+const struct SynthData mineSound = {
+	.durationRemaining = 15,
+	.initialFreq = 110,
+	.finalFreq = 70,
+	.freqSweepPeriod = 10,
+	.initialDutyCycle = 2,
+	.finalDutyCycle = 2,
+	.dutySweepPeriod = 0,
+	.controlFlags = SYNTH_FREQ_SWEEP_BIPOLAR,
+};
+const struct SynthData enemySound = {
+	.durationRemaining = 20,
+	.initialFreq = 140,
+	.finalFreq = 80,
+	.freqSweepPeriod = 0,
+	.initialDutyCycle = 1,
+	.finalDutyCycle = 1,
+	.dutySweepPeriod = 0,
+	.controlFlags = SYNTH_FREQ_SWEEP_SAW|SYNTH_FREQ_SWEEP_REPEAT_ENABLE|SYNTH_FREQ_SWEEP_MULTIPLER_256,
+};
+const struct SynthData laserSound = {
+	.durationRemaining = 10,
+	.initialFreq = 140,
+	.finalFreq = 135,
+	.freqSweepPeriod = 0,
+	.initialDutyCycle = 2,
+	.finalDutyCycle = 1,
+	.dutySweepPeriod = 5,
+	.controlFlags = SYNTH_FREQ_SWEEP_SAW|SYNTH_DUTY_SWEEP_SAW|SYNTH_FAST_STEP_MODE_ENABLE,
+};
 
 #define AABB(ax,ay,aw,ah,bx,by,bw,bh) (ax+aw > bx && ax < bx+bw && ay+ah > by && ay < by+bh)
 
@@ -205,6 +258,7 @@ void spawnBullet(void){
 	nextBulletSpawnTick = systemGetTick()
 							+(rand()%(BULLET_SPAWN_RATE_TABLE[bulletSpawnRateLevel]/2)
 							+BULLET_SPAWN_RATE_TABLE[bulletSpawnRateLevel]/2)*FRAME_RATE_TABLE[frameRateLevel];
+	synthPlayOne(true, &bulletSound);
 }
 
 void spawnMine(void){
@@ -217,6 +271,7 @@ void spawnMine(void){
 	nextMineSpawnTick = systemGetTick()
 							+(rand()%(MINE_SPAWN_RATE_TABLE[mineSpawnRateLevel]/2)
 							+MINE_SPAWN_RATE_TABLE[mineSpawnRateLevel]/2)*FRAME_RATE_TABLE[frameRateLevel];
+	synthPlayOne(true, &mineSound);
 }
 
 void spawnEnemy(void){
@@ -229,6 +284,7 @@ void spawnEnemy(void){
 	nextEnemySpawnTick = systemGetTick()
 							+(rand()%(ENEMY_SPAWN_RATE_TABLE[enemySpawnRateLevel]/2)
 							+ENEMY_SPAWN_RATE_TABLE[enemySpawnRateLevel]/2)*FRAME_RATE_TABLE[frameRateLevel];
+	synthPlayOne(true, &enemySound);
 }
 
 void spawnLaser(void){
@@ -240,6 +296,7 @@ void spawnLaser(void){
 			laser = gameObjectNew(GAME_OBJECT_LASER, character->x+LASER_WIDTH, character->y+LASER_Y_OFFSET);
 			laser->extra = -LASER_SPEED;
 		}
+		synthPlayOne(true, &laserSound);
 	}
 }
 
@@ -456,6 +513,7 @@ void processGameLogic(void){
 				if(AABB(character->x, character->y, CHARACTER_WIDTH, CHARACTER_HEIGHT,
 				gameObjectArray[i].x, gameObjectArray[i].y, COIN_WIDTH, COIN_HEIGHT)){
 					gameObjectDelete(&gameObjectArray[i]);
+					synthPlayOne(false, &coinSound);
 					increasesDifficulty();
 					if(getTotalLevel()<MAX_TOTAL_LEVEL){
 						spawnCoin();

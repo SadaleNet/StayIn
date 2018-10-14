@@ -284,6 +284,24 @@ void gameInit(void){
 
 }
 
+void caucluateNextBulletSpawnTick(void){
+	nextBulletSpawnTick = systemGetTick()
+							+(rand()%(BULLET_SPAWN_RATE_TABLE[bulletSpawnRateLevel]/2)
+							+BULLET_SPAWN_RATE_TABLE[bulletSpawnRateLevel]/2)*FRAME_RATE_TABLE[frameRateLevel];
+}
+
+void caucluateNextMineSpawnTick(void){
+	nextMineSpawnTick = systemGetTick()
+							+(rand()%(MINE_SPAWN_RATE_TABLE[mineSpawnRateLevel]/2)
+							+MINE_SPAWN_RATE_TABLE[mineSpawnRateLevel]/2)*FRAME_RATE_TABLE[frameRateLevel];
+}
+
+void caucluateNextEnemySpawnTick(void){
+	nextEnemySpawnTick = systemGetTick()
+							+(rand()%(ENEMY_SPAWN_RATE_TABLE[enemySpawnRateLevel]/2)
+							+ENEMY_SPAWN_RATE_TABLE[enemySpawnRateLevel]/2)*FRAME_RATE_TABLE[frameRateLevel];
+}
+
 void spawnCoin(void){
 	int x, y;
 	do{ //Keep randomly picking a position until we find the one that isn't close with the character
@@ -307,10 +325,7 @@ void spawnBullet(void){
 	else
 		bullet = gameObjectNew(GAME_OBJECT_BULLET, -BULLET_WIDTH, y);
 	bullet->extra = speed;
-	//Set the time tick to spawn the next cloud
-	nextBulletSpawnTick = systemGetTick()
-							+(rand()%(BULLET_SPAWN_RATE_TABLE[bulletSpawnRateLevel]/2)
-							+BULLET_SPAWN_RATE_TABLE[bulletSpawnRateLevel]/2)*FRAME_RATE_TABLE[frameRateLevel];
+	caucluateNextBulletSpawnTick();
 	synthPlayOne(true, &bulletSound);
 }
 
@@ -320,10 +335,7 @@ void spawnMine(void){
 	struct GameObject *mine;
 	mine = gameObjectNew(GAME_OBJECT_MINE, x, GRAPHIC_PIXEL_HEIGHT);
 	mine->extra = speed;
-	//Set the time tick to spawn the next cloud
-	nextMineSpawnTick = systemGetTick()
-							+(rand()%(MINE_SPAWN_RATE_TABLE[mineSpawnRateLevel]/2)
-							+MINE_SPAWN_RATE_TABLE[mineSpawnRateLevel]/2)*FRAME_RATE_TABLE[frameRateLevel];
+	caucluateNextMineSpawnTick();
 	synthPlayOne(true, &mineSound);
 }
 
@@ -332,11 +344,7 @@ void spawnEnemy(void){
 		gameObjectNew(GAME_OBJECT_ENEMY, GRAPHIC_PIXEL_WIDTH-1, 0); //The y will be calaculated every frame
 	else
 		gameObjectNew(GAME_OBJECT_ENEMY, -ENEMY_WIDTH, 0); //The y will be calaculated every frame
-
-	//Set the time tick to spawn the next cloud
-	nextEnemySpawnTick = systemGetTick()
-							+(rand()%(ENEMY_SPAWN_RATE_TABLE[enemySpawnRateLevel]/2)
-							+ENEMY_SPAWN_RATE_TABLE[enemySpawnRateLevel]/2)*FRAME_RATE_TABLE[frameRateLevel];
+	caucluateNextEnemySpawnTick();
 	synthPlayOne(true, &enemySound);
 }
 
@@ -373,12 +381,12 @@ void increasesDifficulty(void){
 			difficultyIncreased = true;
 		}else if(type==1 && bulletSpawnRateLevel<MAX_LEVEL_EACH){
 			bulletSpawnRateLevel++;
-			spawnBullet();
+			caucluateNextBulletSpawnTick();
 			strcpy(message, BULLETS_PROJECTILE_DIFFICULTY_INCREASE_TEXT);
 			difficultyIncreased = true;
 		}else if(type==2 && mineSpawnRateLevel<MAX_LEVEL_EACH){
 			mineSpawnRateLevel++;
-			spawnMine();
+			caucluateNextMineSpawnTick();
 			strcpy(message, MINES_PROJECTILE_RATE_DIFFICULTY_INCREASE_TEXT);
 			difficultyIncreased = true;
 		}else if(type==3 && platformDifficultyLevel<MAX_LEVEL_EACH){
@@ -387,7 +395,7 @@ void increasesDifficulty(void){
 			difficultyIncreased = true;
 		}else if(type==4 && enemySpawnRateLevel<MAX_LEVEL_EACH){
 			enemySpawnRateLevel++;
-			spawnEnemy();
+			caucluateNextEnemySpawnTick();
 			strcpy(message, ENEMY_RATE_DIFFICULTY_INCREASE_TEXT);
 			difficultyIncreased = true;
 		}

@@ -261,16 +261,16 @@ END
 
 >./assets/enemy1.img
 ..............
-.X          X.
 .XX        XX.
+.X          X.
 . XXXX  XXXX .
 .XXXXXXXXXXXX.
 .X          X.
 .X XX    XX X.
 .X XX    XX X.
 .X          X.
-.X  XXXXXX  X.
-.X X      X X.
+.X XXXXXXXX X.
+.X          X.
 .X          X.
 .XXXXXXXXXXXX.
 ..............

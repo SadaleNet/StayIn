@@ -13,6 +13,8 @@
 #define ENEMY_HEIGHT (12)
 #define LASER_WIDTH (5)
 #define LASER_HEIGHT (1)
+#define STAR_WIDTH (1)
+#define STAR_HEIGHT (1)
 
 enum GameObjectType{
 	NO_OBJECT,
@@ -24,6 +26,7 @@ enum GameObjectType{
 	GAME_OBJECT_MINE,
 	GAME_OBJECT_ENEMY,
 	GAME_OBJECT_LASER, //The projectile shot by the player
+	GAME_OBJECT_STAR, //Eyecandy
 };
 
 struct __attribute__((packed)) GameObject{

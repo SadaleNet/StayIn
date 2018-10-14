@@ -15,6 +15,8 @@
 #define CHARACTER_MOVEMENT_SPEED_16 32
 #define CLOUD_SPAWN_MIN_INTERVAL_IN_FRAMES 60
 #define CLOUD_SPAWN_MAX_INTERVAL_IN_FRAMES 85
+#define STAR_SPAWN_MIN_INTERVAL_IN_FRAMES 10
+#define STAR_SPAWN_MAX_INTERVAL_IN_FRAMES 20
 #define MIN_HEIGHT_OF_COLLIDIBLE_OBJECT CLOUD_HEIGHT
 #define COIN_SPAWN_CHARACTER_DISTANCE 8
 
@@ -44,6 +46,7 @@
 #define ENEMY_SPEED_DIVIDER 3
 #define LASER_SPEED 3
 #define LASER_Y_OFFSET 4
+#define STAR_SPEED_DIVIDER 3
 
 #define STORAGE_HIGHSCORE_RESOURCE 255 //The resource for storing the game highscore
 #define STORAGE_HIGHSCORE_MAGIC_NUMBER 0x55 //Used for checking if the saved game highscore data is initialized
@@ -56,12 +59,14 @@ uint32_t gameFallCounter;
 uint32_t gameEnemyMovementCounter;
 uint32_t bulletMovementCounter;
 uint32_t mineMovementCounter;
+uint32_t gameStarMovementCounter;
 uint32_t eightFramesImageCounter;
 uint32_t twoFramesImageCounter;
 uint32_t nextCloudSpawnTick;
 uint32_t nextBulletSpawnTick;
 uint32_t nextMineSpawnTick;
 uint32_t nextEnemySpawnTick;
+uint32_t nextStarSpawnTick;
 uint32_t messageEndTick;
 char message[GRAPHIC_PIXEL_WIDTH/6+1];
 
@@ -109,6 +114,8 @@ struct GraphicImage bulletImageL;
 struct GraphicImage bulletImageR;
 struct GraphicImage mineImage[2];
 struct GraphicImage enemyImage[2];
+uint8_t starImageData[] = {0x1};
+struct GraphicImage starImage = {.image = starImageData, .height=8, .width=1};
 
 uint8_t characterGraphicBuffer[CHARACTER_GRAPHIC_BUFFER_SIZE*4];
 uint8_t cloudAndConveyorGraphicBuffer[CLOUD_OR_CONVERYOR_GRAPHIC_BUFFER_SIZE*3];
@@ -266,12 +273,14 @@ void gameInit(void){
 	gameEnemyMovementCounter = 0;
 	bulletMovementCounter = 0;
 	mineMovementCounter = 0;
+	gameStarMovementCounter = 0;
 	eightFramesImageCounter = 0;
 	twoFramesImageCounter = 0;
 	nextCloudSpawnTick = 0;
 	nextBulletSpawnTick = UINT32_MAX;
 	nextMineSpawnTick = UINT32_MAX;
 	nextEnemySpawnTick = UINT32_MAX;
+	nextStarSpawnTick = 0;
 
 	frameRateLevel = 0;
 	bulletSpawnRateLevel = 0;
@@ -475,6 +484,14 @@ void processGameLogic(void){
 		}
 	}
 	
+	if(systemGetTick()>=nextStarSpawnTick){
+		gameObjectNew(GAME_OBJECT_STAR, rand()%(GRAPHIC_PIXEL_WIDTH-STAR_WIDTH), GRAPHIC_PIXEL_HEIGHT);
+		//Set the time tick to spawn the next cloud
+		nextStarSpawnTick = systemGetTick()
+								+(rand()%(STAR_SPAWN_MAX_INTERVAL_IN_FRAMES-STAR_SPAWN_MIN_INTERVAL_IN_FRAMES)
+								+STAR_SPAWN_MIN_INTERVAL_IN_FRAMES)*FRAME_RATE_TABLE[frameRateLevel];
+	}
+	
 	if(systemGetTick()>=nextBulletSpawnTick)
 		spawnBullet();
 
@@ -495,6 +512,9 @@ void processGameLogic(void){
 
 	if(mineMovementCounter>=MINE_SLOW_SPEED_DIVIDER)
 		mineMovementCounter = 0;
+
+	if(gameStarMovementCounter>=STAR_SPEED_DIVIDER)
+		gameStarMovementCounter = 0;
 
 	for(size_t i=0; i<GAME_OBJECT_NUM; i++){
 		switch(gameObjectArray[i].type){
@@ -554,6 +574,16 @@ void processGameLogic(void){
 					gameObjectDelete(&gameObjectArray[i]);
 					laser = NULL;
 				}
+			break;
+			case GAME_OBJECT_STAR:
+				if(gameStarMovementCounter==0){
+					//Move the each star up
+					gameObjectArray[i].y--;
+					//If the star had rised to too high and disappeared from the screen, delete it.
+					if(gameObjectArray[i].y+STAR_HEIGHT<0)
+						gameObjectDelete(&gameObjectArray[i]);
+				}
+			break;
 			default:
 			break;
 		}
@@ -562,6 +592,7 @@ void processGameLogic(void){
 	gameEnemyMovementCounter++;
 	bulletMovementCounter++;
 	mineMovementCounter++;
+	gameStarMovementCounter++;
 
 	//Process character movement: check if the character is landed
 	if(characterYVel16>=GAME_CHARACTER_Y16_ACCEL*2)
@@ -703,6 +734,9 @@ void renderGameObjects(void){
 				};
 				graphicDrawImage(&graphicImage, gameObjectArray[i].x, gameObjectArray[i].y, GRAPHIC_MODE_BACKGROUND_OR);
 			}
+			break;
+			case GAME_OBJECT_STAR:
+				graphicDrawImage(&starImage, gameObjectArray[i].x, gameObjectArray[i].y, GRAPHIC_MODE_FOREGROUND_OR);
 			break;
 			default:
 			break;

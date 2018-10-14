@@ -172,6 +172,28 @@ const struct SynthData laserSound = {
 	.dutySweepPeriod = 5,
 	.controlFlags = SYNTH_FREQ_SWEEP_SAW|SYNTH_DUTY_SWEEP_SAW|SYNTH_FAST_STEP_MODE_ENABLE,
 };
+const uint8_t menuMusic[] = {
+	0, SYNTH_COMMAND_MODE_FULL_ONCE_RETURN_TO_DF,
+	1, 255, 255, 0, 0x33, 0, 0,
+	10,121,
+	10,129,
+	10,121,
+	10,129,
+	10,121,
+	30,255,
+	10,116,
+	10,129,
+	10,116,
+	10,129,
+	10,116,
+	30,255,
+	20,134,
+	20,255,
+	20,126,
+	20,255,
+	20,129,
+	0, SYNTH_COMMAND_MODE_ONCE
+};
 
 #define AABB(ax,ay,aw,ah,bx,by,bw,bh) (ax+aw > bx && ax < bx+bw && ay+ah > by && ay < by+bh)
 
@@ -344,6 +366,11 @@ void increasesDifficulty(void){
 		}
 	}while(!difficultyIncreased);
 	messageEndTick = systemGetTick()+MESSAGE_DURATION;
+}
+
+void gameOverAndPlayMusic(void){
+	gameOver = true;
+	synthPlayCommand(false, menuMusic);
 }
 
 void handleKeyInput(void){
@@ -529,19 +556,19 @@ void processGameLogic(void){
 			case GAME_OBJECT_BULLET:
 				if(AABB(character->x, character->y, CHARACTER_WIDTH, CHARACTER_HEIGHT,
 				gameObjectArray[i].x, gameObjectArray[i].y, BULLET_WIDTH, BULLET_HEIGHT)){
-					gameOver = true;
+					gameOverAndPlayMusic();
 				}
 			break;
 			case GAME_OBJECT_MINE:
 				if(AABB(character->x, character->y, CHARACTER_WIDTH, CHARACTER_HEIGHT,
 				gameObjectArray[i].x, gameObjectArray[i].y, MINE_WIDTH, MINE_HEIGHT)){
-					gameOver = true;
+					gameOverAndPlayMusic();
 				}
 			break;
 			case GAME_OBJECT_ENEMY:
 				if(AABB(character->x, character->y, CHARACTER_WIDTH, CHARACTER_HEIGHT,
 				gameObjectArray[i].x, gameObjectArray[i].y, ENEMY_WIDTH, ENEMY_HEIGHT)){
-					gameOver = true;
+					gameOverAndPlayMusic();
 				}
 
 				if(laser != NULL &&
@@ -560,7 +587,7 @@ void processGameLogic(void){
 
 	if(character->x+CHARACTER_WIDTH<0 || character->x>GRAPHIC_PIXEL_WIDTH ||
 		character->y+CHARACTER_HEIGHT<0 || character->y>=GRAPHIC_PIXEL_HEIGHT)
-		gameOver = true;
+		gameOverAndPlayMusic();
 }
 
 void renderGameObjects(void){
@@ -659,7 +686,7 @@ int main(void){
 
 	//Game Objects Initialization
 	gameInit();
-	gameOver = true;
+	gameOverAndPlayMusic();
 
 	//Initialize display
 	graphicSetDrawBuffer(lcdDmaBuffer);

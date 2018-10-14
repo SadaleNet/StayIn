@@ -1,0 +1,11 @@
+NAME,Stay In
+AUTHOR,Sadale.net
+DESCRIPTION,This game was developed for the 4th Alakajam
+0,bin/game.bin
+1,assets/characterL0.img,assets/characterL1.img,assets/characterR0.img,assets/characterR1.img
+2,assets/cloud.img,assets/conveyorL.img,assets/conveyorR.img
+3,assets/coin0.img,assets/coin1.img,assets/coin2.img,assets/coin3.img,assets/coin4.img,assets/coin5.img,assets/coin6.img,assets/coin7.img
+4,assets/bulletL.img,assets/bulletR.img
+5,assets/mine0.img,assets/mine1.img
+6,assets/enemy0.img,assets/enemy1.img
+255,[1024]

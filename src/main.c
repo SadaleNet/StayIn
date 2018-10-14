@@ -38,7 +38,7 @@
 #define ENEMY_SPEED 1
 #define ENEMY_SPEED_DIVIDER 3
 #define LASER_SPEED 3
-#define LASER_Y_OFFSET 3
+#define LASER_Y_OFFSET 4
 
 #define STORAGE_HIGHSCORE_RESOURCE 255 //The resource for storing the game highscore
 #define STORAGE_HIGHSCORE_MAGIC_NUMBER 0x55 //Used for checking if the saved game highscore data is initialized

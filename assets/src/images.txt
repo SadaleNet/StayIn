@@ -1,0 +1,277 @@
+>./assets/characterL0.img
+.........
+.XXXXXXX.
+.  X   X.
+.  XXXXX.
+.    XX .
+.XXXXXX .
+.    XX .
+. XXXXXX.
+.X     X.
+.........
+END
+
+>./assets/characterL1.img
+.........
+.       .
+.XXXXXXX.
+.  X   X.
+.  XXXXX.
+.XXXXXXX.
+.     XX.
+. XXXXXX.
+.X     X.
+.........
+END
+
+>./assets/characterR0.img
+.........
+.XXXXXXX.
+.X   X  .
+.XXXXX  .
+. XX    .
+. XXXXXX.
+. XX    .
+.XXXXXX .
+.X     X.
+.........
+END
+
+>./assets/characterR1.img
+.........
+.       .
+.XXXXXXX.
+.X   X  .
+.XXXXX  .
+.XXXXXXX.
+.XX     .
+.XXXXXX .
+.X     X.
+.........
+END
+
+
+>./assets/cloud.img
+..................................
+. XXXX X  XXXXX  XXX X   XXXX XX .
+.X    XXXX     XX   XXXXX    X  X.
+.X      X     X      X     X    X.
+. X    X   X      X    X       X .
+. X   X        X  X        X   XX.
+.X      X         X    X      X X.
+.X  XX XX X  XXX    XXX X  XX  XX.
+. XX   X XXXX X XXXX   XXXXX XXXX.
+..................................
+END
+
+>./assets/conveyorL.img
+..................................
+.XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.
+.X   X   X   X   X   X   X   X  X.
+.X  X   X   X   X   X   X   X   X.
+.X X   X   X   X   X   X   X    X.
+.X X   X   X   X   X   X   X    X.
+.X  X   X   X   X   X   X   X   X.
+.X   X   X   X   X   X   X   X  X.
+.XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.
+..................................
+END
+
+
+>./assets/conveyorR.img
+..................................
+.XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.
+.X  X   X   X   X   X   X   X   X.
+.X   X   X   X   X   X   X   X  X.
+.X    X   X   X   X   X   X   X X.
+.X    X   X   X   X   X   X   X X.
+.X   X   X   X   X   X   X   X  X.
+.X  X   X   X   X   X   X   X   X.
+.XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.
+..................................
+END
+
+
+>./assets/coin0.img
+..........
+.  XXXX  .
+. X    X .
+.X  XX  X.
+.X X  X X.
+.X X  X X.
+.X  XX  X.
+. X    X .
+.  XXXX  .
+..........
+END
+
+>./assets/coin1.img
+..........
+.  XXXX  .
+. X    X .
+. X XX X .
+. X XX X .
+. X XX X .
+. X XX X .
+. X    X .
+.  XXXX  .
+..........
+END
+
+>./assets/coin2.img
+..........
+.   XX   .
+.  X  X  .
+.  X  X  .
+.  X  X  .
+.  X  X  .
+.  X  X  .
+.  X  X  .
+.   XX   .
+..........
+END
+
+>./assets/coin3.img
+..........
+.   XX   .
+.   XX   .
+.   XX   .
+.   XX   .
+.   XX   .
+.   XX   .
+.   XX   .
+.   XX   .
+..........
+END
+
+>./assets/coin4.img
+..........
+.   XX   .
+.  X  X  .
+.  X  X  .
+.  X  X  .
+.  X  X  .
+.  X  X  .
+.  X  X  .
+.   XX   .
+..........
+END
+
+>./assets/coin5.img
+..........
+.  XXXX  .
+. X    X .
+. X XX X .
+. X XX X .
+. X XX X .
+. X XX X .
+. X    X .
+.  XXXX  .
+..........
+END
+
+>./assets/coin6.img
+..........
+.  XXXX  .
+. X    X .
+.X  XX  X.
+.X X  X X.
+.X X  X X.
+.X  XX  X.
+. X    X .
+.  XXXX  .
+..........
+END
+
+>./assets/coin7.img
+..........
+.  XXXX  .
+. X    X .
+.X  XX  X.
+.X X  X X.
+.X X  X X.
+.X  XX  X.
+. X    X .
+.  XXXX  .
+..........
+END
+
+
+>./assets/bulletL.img
+............
+. XXXXXXX X.
+.X      XXX.
+.X XXXX XXX.
+.X      XXX.
+.X XXXX XXX.
+.X      XXX.
+. XXXXXXX X.
+............
+END
+
+>./assets/bulletR.img
+............
+.X XXXXXXX .
+.XXX      X.
+.XXX XXXX X.
+.XXX      X.
+.XXX XXXX X.
+.XXX      X.
+.X XXXXXXX .
+............
+END
+
+
+>./assets/mine0.img
+.......
+.X X X.
+. XXX .
+.XXXXX.
+. XXX .
+.X X X.
+.......
+END
+
+>./assets/mine1.img
+.......
+.X X X.
+. XXX .
+.XX XX.
+. XXX .
+.X X X.
+.......
+END
+
+>./assets/enemy0.img
+..............
+.X          X.
+.XX        XX.
+. XXXX  XXXX .
+.XXXXXXXXXXXX.
+.X          X.
+.X XX    XX X.
+.X  XX  XX  X.
+.X          X.
+.X  XXXXXX  X.
+.X X      X X.
+.X          X.
+.XXXXXXXXXXXX.
+..............
+END
+
+>./assets/enemy1.img
+..............
+.X          X.
+.XX        XX.
+. XXXX  XXXX .
+.XXXXXXXXXXXX.
+.X          X.
+.X XX    XX X.
+.X XX    XX X.
+.X          X.
+.X  XXXXXX  X.
+.X X      X X.
+.X          X.
+.XXXXXXXXXXXX.
+..............
+END

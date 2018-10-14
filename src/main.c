@@ -594,6 +594,7 @@ int main(void){
 
 	//Game Objects Initialization
 	gameInit();
+	gameOver = true;
 
 	//Initialize display
 	graphicSetDrawBuffer(lcdDmaBuffer);

@@ -15,7 +15,7 @@ OBJS = $(OUTPUT_DIR)/main.o $(OUTPUT_DIR)/gameObject.o
 
 
 LIBS = -lc -lrdimon -lm
-CFLAGS = -g -mcpu=cortex-m0 -mthumb -mfloat-abi=soft -Og -g -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -mabi=aapcs -I$(INCLUDE_DIR)
+CFLAGS = -g -mcpu=cortex-m0 -mthumb -mfloat-abi=soft -Og -g -Wall -Wextra -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -mabi=aapcs -I$(INCLUDE_DIR)
 
 ASFLAGS = -mcpu=cortex-m0 -mthumb -mfloat-abi=soft
 LINKER_FLAGS = -mcpu=cortex-m0 -mthumb -mfloat-abi=soft -specs=nosys.specs -specs=nano.specs -specs=rdimon.specs -lc -lrdimon -Wl,-Map=output.map -Wl,--just-symbols=$(API_MAPPER) -Wl,--gc-sections -mabi=aapcs

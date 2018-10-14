@@ -31,8 +31,12 @@
 
 #define BULLET_MIN_SPEED 1
 #define BULLET_MAX_SPEED 3
+#define BULLET_SLOW_SPEED_DIVIDER 3
+#define BULLET_SLOW_SPEED_REGION BULLET_WIDTH
 #define MINE_MIN_SPEED 2
 #define MINE_MAX_SPEED 5
+#define MINE_SLOW_SPEED_DIVIDER 4
+#define MINE_SLOW_SPEED_REGION 16
 #define CONVEYOR_MIN_SPEED 10
 #define CONVEYOR_MAX_SPEED 30
 #define ENEMY_SPEED 1
@@ -48,6 +52,8 @@ bool characterLanded, characterFacingRight;
 bool gameOver;
 uint32_t gameFallCounter;
 uint32_t gameEnemyMovementCounter;
+uint32_t bulletMovementCounter;
+uint32_t mineMovementCounter;
 uint32_t eightFramesImageCounter;
 uint32_t twoFramesImageCounter;
 uint32_t nextCloudSpawnTick;
@@ -255,6 +261,8 @@ void gameInit(void){
 
 	gameFallCounter = 0;
 	gameEnemyMovementCounter = 0;
+	bulletMovementCounter = 0;
+	mineMovementCounter = 0;
 	eightFramesImageCounter = 0;
 	twoFramesImageCounter = 0;
 	nextCloudSpawnTick = 0;
@@ -454,9 +462,14 @@ void processGameLogic(void){
 	if(gameFallCounter>=GAME_SCENE_FALL_INTERVAL_IN_FRAMES)
 		gameFallCounter = 0;
 
-
 	if(gameEnemyMovementCounter>=ENEMY_SPEED_DIVIDER)
 		gameEnemyMovementCounter = 0;
+
+	if(bulletMovementCounter>=BULLET_SLOW_SPEED_DIVIDER)
+		bulletMovementCounter = 0;
+
+	if(mineMovementCounter>=MINE_SLOW_SPEED_DIVIDER)
+		mineMovementCounter = 0;
 
 	for(size_t i=0; i<GAME_OBJECT_NUM; i++){
 		switch(gameObjectArray[i].type){
@@ -473,13 +486,24 @@ void processGameLogic(void){
 			break;
 			//Process bullet movement
 			case GAME_OBJECT_BULLET:
-				gameObjectArray[i].x += gameObjectArray[i].extra;
+				if((gameObjectArray[i].extra<0 && gameObjectArray[i].x>=GRAPHIC_PIXEL_WIDTH-BULLET_SLOW_SPEED_REGION) ||
+					(gameObjectArray[i].extra>0 && gameObjectArray[i].x+BULLET_WIDTH<BULLET_SLOW_SPEED_REGION)){
+					if(bulletMovementCounter==0)
+						gameObjectArray[i].x += gameObjectArray[i].extra>0? 1: -1;
+				}else{
+					gameObjectArray[i].x += gameObjectArray[i].extra;
+				}
 				if(gameObjectArray[i].x+BULLET_WIDTH<0 || gameObjectArray[i].x >= GRAPHIC_PIXEL_WIDTH)
 					gameObjectDelete(&gameObjectArray[i]);
 			break;
 			//Process mine movement
 			case GAME_OBJECT_MINE:
-				gameObjectArray[i].y -= gameObjectArray[i].extra;
+				if(gameObjectArray[i].y>=GRAPHIC_PIXEL_HEIGHT-MINE_HEIGHT){
+					if(mineMovementCounter==0)
+						gameObjectArray[i].y -= 1;
+				}else{
+					gameObjectArray[i].y -= gameObjectArray[i].extra;
+				}
 				if(gameObjectArray[i].y+MINE_HEIGHT<0)
 					gameObjectDelete(&gameObjectArray[i]);
 			break;
@@ -511,6 +535,8 @@ void processGameLogic(void){
 	}
 	gameFallCounter++;
 	gameEnemyMovementCounter++;
+	bulletMovementCounter++;
+	mineMovementCounter++;
 
 	//Process character movement: check if the character is landed
 	if(characterYVel16>=GAME_CHARACTER_Y16_ACCEL*2)

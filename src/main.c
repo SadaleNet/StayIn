@@ -172,6 +172,16 @@ const struct SynthData laserSound = {
 	.dutySweepPeriod = 5,
 	.controlFlags = SYNTH_FREQ_SWEEP_SAW|SYNTH_DUTY_SWEEP_SAW|SYNTH_FAST_STEP_MODE_ENABLE,
 };
+const struct SynthData jumpSound = {
+	.durationRemaining = 15,
+	.initialFreq = 50,
+	.finalFreq = 150,
+	.freqSweepPeriod = 1,
+	.initialDutyCycle = 1,
+	.finalDutyCycle = 1,
+	.dutySweepPeriod = 0,
+	.controlFlags = SYNTH_FREQ_SWEEP_SAW|SYNTH_FREQ_SWEEP_MULTIPLER_256,
+};
 const uint8_t menuMusic[] = {
 	0, SYNTH_COMMAND_MODE_FULL_ONCE_RETURN_TO_DF,
 	1, 255, 255, 0, 0x33, 0, 0,
@@ -385,6 +395,7 @@ void handleKeyInput(void){
 			if(characterLanded){
 				characterYVel16 = CHARACTER_JUMP_VELOCITY;
 				characterLanded = false;
+				synthPlayOne(false, &jumpSound);
 			}
 		}
 		if((state&KEYS_1)!=0 && (justChanged&KEYS_1)!=0)

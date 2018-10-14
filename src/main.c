@@ -526,7 +526,6 @@ void processGameLogic(void){
 					//If the cloud had rised to too high and disappeared from the screen, delete it.
 					if(gameObjectArray[i].y+CLOUD_HEIGHT<0)
 						gameObjectDelete(&gameObjectArray[i]);
-					gameFallCounter = 0;
 				}
 			break;
 			//Process bullet movement

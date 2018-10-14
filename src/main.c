@@ -40,6 +40,9 @@
 #define LASER_SPEED 3
 #define LASER_Y_OFFSET 3
 
+#define STORAGE_HIGHSCORE_RESOURCE 255 //The resource for storing the game highscore
+#define STORAGE_HIGHSCORE_MAGIC_NUMBER 0x55 //Used for checking if the saved game highscore data is initialized
+
 int characterX16, characterX16ConveyorVel, characterY16, characterYVel16, characterYAccel16;
 bool characterLanded, characterFacingRight;
 bool gameOver;
@@ -509,10 +512,29 @@ void renderGameObjects(void){
 		}
 	}
 	if(gameOver){
-		int highScore = 0; //TODO: load highScore from the saved data
+		int score = getTotalLevel();
+		int highScore = 0;
+		uint8_t magicNumber = 0;
+
+		//Read the highscore. If the current highscore is larger than the old one, also save it.
+		{
+			char buf[sizeof(highScore)+sizeof(magicNumber)];
+			int len = storageRead(STORAGE_HIGHSCORE_RESOURCE, 0, buf, sizeof(buf));
+			if(len==sizeof(buf)){
+				memcpy(&magicNumber, &buf[4], sizeof(magicNumber));
+				if(magicNumber==STORAGE_HIGHSCORE_MAGIC_NUMBER)
+					memcpy(&highScore, &buf[0], sizeof(highScore));
+				if(score>highScore){ //Highscore achieved. Saving.
+					magicNumber = STORAGE_HIGHSCORE_MAGIC_NUMBER;
+					memcpy(&buf[0], &score, sizeof(highScore)); //Save the current score instead of the previous highscore
+					memcpy(&buf[4], &magicNumber, sizeof(magicNumber));
+					storageWrite(STORAGE_HIGHSCORE_RESOURCE, 0, buf, sizeof(buf)); //We just assume that the save is a success :p
+				}
+			}
+		}
 
 		char buf[GRAPHIC_PIXEL_WIDTH/6+1];
-		sprintf(buf, GAME_OVER_TEXT, getTotalLevel(), highScore);
+		sprintf(buf, GAME_OVER_TEXT, score, highScore);
 		graphicDrawText(buf, 0, GAME_OVER_TEXT_X, GAME_OVER_TEXT_Y, GRAPHIC_PIXEL_WIDTH, 8, GRAPHIC_MODE_FOREGROUND_AND_NOT|GRAPHIC_MODE_BACKGROUND_OR);
 	}else{
 		if(systemGetTick()<messageEndTick){

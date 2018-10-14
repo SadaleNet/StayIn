@@ -585,7 +585,7 @@ void processGameLogic(void){
 		}
 	}
 
-	if(character->x+CHARACTER_WIDTH<0 || character->x>GRAPHIC_PIXEL_WIDTH ||
+	if(character->x+CHARACTER_WIDTH<0 || character->x>=GRAPHIC_PIXEL_WIDTH ||
 		character->y+CHARACTER_HEIGHT<0 || character->y>=GRAPHIC_PIXEL_HEIGHT)
 		gameOverAndPlayMusic();
 }

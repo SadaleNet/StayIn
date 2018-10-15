@@ -6,9 +6,9 @@
 
 ## Links
 
-[Youtube Video with Explanation (coming soon)](#)
+[Youtube Video with Explanation](https://www.youtube.com/watch?v=akU4QzDVMiQ)
 
-[Blogpost (coming soon)](#)
+[Official blogpost](https://sadale.net/57/)
 
 ## Introduction
 

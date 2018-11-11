@@ -42,7 +42,7 @@ all: $(OUTPUT_BIN)
 .PRECIOUS: $(OUTPUT_DIR)/%.o
 
 run: all
-	openocd  -f /usr/share/openocd/scripts/interface/stlink-v2.cfg -f /usr/share/openocd/scripts/target/stm32f0x.cfg -c init -c "reset init" -c "flash write_image erase $(OUTPUT_DIR)/$(OUTPUT_BIN) 0x08000400" -c init -c "reset run"
+	openocd  -f /usr/share/openocd/scripts/interface/stlink-v2.cfg -f /usr/share/openocd/scripts/target/stm32f0x.cfg -c init -c "reset init" -c "flash write_image erase $(OUTPUT_DIR)/$(OUTPUT_BIN) 0x08001000" -c init -c "reset run"
 
 clean:
 	rm -f $(OUTPUT_DIR)/*

@@ -54,7 +54,7 @@
 int characterX16, characterX16ConveyorVel, characterY16, characterYVel16, characterYAccel16;
 bool characterLanded, characterFacingRight;
 bool gameOver;
-int score;
+int score, highScore;
 uint32_t gameFallCounter;
 uint32_t gameEnemyMovementCounter;
 uint32_t bulletMovementCounter;
@@ -421,6 +421,26 @@ void increasesDifficulty(void){
 void gameOverAndPlayMusic(void){
 	gameOver = true;
 	synthPlayCommand(false, menuMusic);
+
+	uint8_t magicNumber = 0;
+
+	//Read the highscore. If the current highscore is larger than the old one, also save it.
+	{
+		char buf[sizeof(highScore)+sizeof(magicNumber)];
+		int len = storageRead(STORAGE_HIGHSCORE_RESOURCE, 0, buf, sizeof(buf));
+		if(len==sizeof(buf)){
+			memcpy(&magicNumber, &buf[4], sizeof(magicNumber));
+			if(magicNumber==STORAGE_HIGHSCORE_MAGIC_NUMBER)
+				memcpy(&highScore, &buf[0], sizeof(highScore));
+			if(score>highScore){ //Highscore achieved. Saving.
+				//highScore = score; //Do not update the highScore right here so that the user can view the previous highScore recoard that he had just broken
+				magicNumber = STORAGE_HIGHSCORE_MAGIC_NUMBER;
+				memcpy(&buf[0], &score, sizeof(highScore)); //Save the current score instead of the previous highscore
+				memcpy(&buf[4], &magicNumber, sizeof(magicNumber));
+				storageWrite(STORAGE_HIGHSCORE_RESOURCE, 0, buf, sizeof(buf)); //We just assume that the save is a success :p
+			}
+		}
+	}
 }
 
 void handleKeyInput(void){
@@ -742,26 +762,6 @@ void renderGameObjects(void){
 		}
 	}
 	if(gameOver){
-		int highScore = 0;
-		uint8_t magicNumber = 0;
-
-		//Read the highscore. If the current highscore is larger than the old one, also save it.
-		{
-			char buf[sizeof(highScore)+sizeof(magicNumber)];
-			int len = storageRead(STORAGE_HIGHSCORE_RESOURCE, 0, buf, sizeof(buf));
-			if(len==sizeof(buf)){
-				memcpy(&magicNumber, &buf[4], sizeof(magicNumber));
-				if(magicNumber==STORAGE_HIGHSCORE_MAGIC_NUMBER)
-					memcpy(&highScore, &buf[0], sizeof(highScore));
-				if(score>highScore){ //Highscore achieved. Saving.
-					magicNumber = STORAGE_HIGHSCORE_MAGIC_NUMBER;
-					memcpy(&buf[0], &score, sizeof(highScore)); //Save the current score instead of the previous highscore
-					memcpy(&buf[4], &magicNumber, sizeof(magicNumber));
-					storageWrite(STORAGE_HIGHSCORE_RESOURCE, 0, buf, sizeof(buf)); //We just assume that the save is a success :p
-				}
-			}
-		}
-
 		char buf[GRAPHIC_PIXEL_WIDTH/6+1];
 		sprintf(buf, GAME_OVER_TEXT, score, highScore);
 		graphicDrawText(buf, 0, GAME_OVER_TEXT_X, GAME_OVER_TEXT_Y, GRAPHIC_PIXEL_WIDTH, 8, GRAPHIC_MODE_FOREGROUND_AND_NOT|GRAPHIC_MODE_BACKGROUND_OR);
